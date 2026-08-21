@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>출입신청 자동화</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>출입신청 자동화</h1>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="panel application-panel" aria-labelledby="applicationTitle">
+        <div class="panel-title-row">
+          <h2 id="applicationTitle">신청 정보</h2>
+          <span class="status-pill" id="templateStatus">템플릿 대기</span>
+        </div>
+
+        <div class="template-box auto-template-box">
+          <strong>Excel 양식 자동 선택</strong>
+          <p id="templateHelpText">출입 시작일과 종료일이 같으면 1일 방문, 다르면 2일 이상 방문 양식을 사용합니다.</p>
+        </div>
+
+        <form id="applicationForm" class="form-grid">
+          <label>
+            출입 사이트 <span>*</span>
+            <select id="siteSelect" required></select>
+          </label>
+
+          <label>
+            접수일자 <span>*</span>
+            <input type="date" id="receivedDateInput" required />
+          </label>
+
+          <label>
+            출입 시작일 <span>*</span>
+            <input type="date" id="startDateInput" required />
+          </label>
+
+          <label>
+            출입 종료일 <span>*</span>
+            <input type="date" id="endDateInput" required />
+          </label>
+
+          <label class="wide-field">
+            출입 목적 <span>*</span>
+            <input id="purposeInput" list="purposeList" placeholder="예: UPS 정기점검" autocomplete="off" required />
+            <datalist id="purposeList"></datalist>
+          </label>
+
+          <label>
+            담당부서
+            <input type="text" id="departmentInput" placeholder="담당부서" autocomplete="organization-title" />
+          </label>
+
+          <label>
+            담당자
+            <input type="text" id="managerInput" placeholder="담당자" autocomplete="name" />
+          </label>
+
+          <label class="wide-field">
+            비고
+            <textarea id="noteInput" rows="3" placeholder="필요한 메모를 입력하세요."></textarea>
+          </label>
+        </form>
+      </section>
+
+      <section class="panel member-panel" aria-labelledby="memberTitle">
+        <div class="panel-title-row">
+          <h2 id="memberTitle">출입자</h2>
+          <button type="button" class="primary-button compact" id="openMemberModalButton">+ 신규 출입자</button>
+        </div>
+
+        <label class="search-field">
+          출입자 검색
+          <input type="search" id="memberSearchInput" placeholder="이름, 소속, 전화번호 검색" />
+        </label>
+
+        <div class="quick-section">
+          <h3>최근 출입자</h3>
+          <div id="recentMembers" class="chip-list"></div>
+        </div>
+
+        <div class="quick-section">
+          <div class="section-title-row">
+            <h3>출입자 그룹</h3>
+            <button type="button" class="text-button" id="saveGroupButton">현재 선택 저장</button>
+          </div>
+          <div id="memberGroups" class="chip-list"></div>
+        </div>
+
+        <div id="memberList" class="member-list"></div>
+      </section>
+
+      <section class="panel selected-panel" aria-labelledby="selectedTitle">
+        <h2 id="selectedTitle">선택된 출입자 <span id="selectedCount">0명</span></h2>
+        <ol id="selectedMembers" class="selected-list"></ol>
+      </section>
+
+      <section class="panel preview-panel" aria-labelledby="previewTitle">
+        <h2 id="previewTitle">신청 미리보기</h2>
+        <div id="messageBox" class="message-box" role="status" aria-live="polite"></div>
+        <div id="previewBox" class="preview-box"></div>
+        <button type="button" class="primary-button generate-button" id="generateExcelButton">
+          출입신청서 생성
+        </button>
+      </section>
+
+      <section class="panel history-panel" aria-labelledby="historyTitle">
+        <h2 id="historyTitle">최근 신청</h2>
+        <div id="applicationHistory" class="history-list"></div>
+      </section>
+    </main>
+
+    <dialog id="memberDialog" class="member-dialog">
+      <form method="dialog" id="memberForm">
+        <div class="panel-title-row">
+          <h2 id="memberDialogTitle">신규 출입자</h2>
+          <button type="button" class="icon-button" id="closeMemberModalButton" aria-label="닫기">×</button>
+        </div>
+
+        <input type="hidden" id="memberIdInput" />
+
+        <label>
+          소속 / 회사명
+          <input type="text" id="memberCompanyInput" placeholder="처음 사용하는 경우 직접 입력" autocomplete="organization" />
+        </label>
+
+        <label>
+          이름 <span>*</span>
+          <input type="text" id="memberNameInput" autocomplete="name" required />
+        </label>
+
+        <label>
+          연락처
+          <input type="tel" id="memberPhoneInput" placeholder="010-1234-5678" inputmode="tel" autocomplete="tel" />
+        </label>
+
+        <label>
+          차량번호
+          <input type="text" id="memberVehicleInput" placeholder="12가3456" autocomplete="off" />
+        </label>
+
+        <label>
+          휴대폰 카메라
+          <select id="memberCameraInput">
+            <option value="X">X</option>
+            <option value="O">O</option>
+          </select>
+        </label>
+
+        <label>
+          기본 출입목적
+          <input type="text" id="memberPurposeInput" list="purposeList" autocomplete="off" />
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="memberAddNowInput" checked />
+          저장 후 현재 신청 인원에 추가
+        </label>
+
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" id="cancelMemberButton">취소</button>
+          <button type="submit" class="primary-button">저장</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
