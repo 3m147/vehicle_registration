@@ -9,12 +9,10 @@ export const EXCEL_TEMPLATES = {
   oneDay: {
     id: "oneDay",
     name: "1일 방문",
-    shortName: "1일방문",
     file: "./template/cfs_one_day.xlsx",
     sheetName: "단체 출입 신청서",
     maxVisitors: 15,
     fixedCompanyName: "한성엔지니어링",
-    includeTemplateNameInFile: true,
     mapping: {
       site: "D4",
       receivedDate: "D5",
@@ -43,12 +41,10 @@ export const EXCEL_TEMPLATES = {
   multiDay: {
     id: "multiDay",
     name: "2일 이상 방문",
-    shortName: "장기방문",
     file: "./template/cfs_multi_day.xlsx",
     sheetName: "장기 출입 신청서",
     maxVisitors: 15,
     fixedCompanyName: "한성엔지니어링",
-    includeTemplateNameInFile: true,
     mapping: {
       site: "D4",
       receivedDate: "",

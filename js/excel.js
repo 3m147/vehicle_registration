@@ -36,13 +36,9 @@ function formatDateForFileName(dateText, useLongYear = false) {
   return useLongYear ? compact : compact.slice(2);
 }
 
-export function buildExcelFileName(site, startDate, template, useLongYear = false) {
+export function buildExcelFileName(site, startDate, useLongYear = false) {
   const safeSite = site.replace(/[\\/:*?"<>|]/g, "_");
   const dateText = formatDateForFileName(startDate, useLongYear);
-
-  if (template?.includeTemplateNameInFile && template.shortName) {
-    return `${safeSite}_${template.shortName}_${dateText}.xlsx`;
-  }
 
   return `${safeSite}_출입신청서_${dateText}.xlsx`;
 }

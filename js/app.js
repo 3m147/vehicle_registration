@@ -483,7 +483,7 @@ async function generateExcel() {
       { ...application, excelCompanyName: template.fixedCompanyName },
       selectedMembers
     );
-    const fileName = buildExcelFileName(application.site, application.startDate, template);
+    const fileName = buildExcelFileName(application.site, application.startDate);
 
     downloadBlob(blob, fileName);
     touchMembers(selectedMembers.map((member) => member.id), application.startDate);
