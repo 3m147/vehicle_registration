@@ -12,7 +12,7 @@ import {
   touchMembers,
   updateMember
 } from "./storage.js";
-import { maskPhone, maskVehicle, normalizePhone, searchMembers, toggleFavorite } from "./members.js";
+import { formatPhoneForDisplay, maskPhone, maskVehicle, normalizePhone, searchMembers, toggleFavorite } from "./members.js";
 import { buildExcelFileName, createExcelFromTemplate } from "./excel.js";
 import { getTemplateByVisitDates } from "./templates.js";
 
@@ -604,6 +604,14 @@ function bindEvents() {
   elements.openMemberModalButton.addEventListener("click", () => openMemberDialog());
   elements.closeMemberModalButton.addEventListener("click", closeMemberDialog);
   elements.cancelMemberButton.addEventListener("click", closeMemberDialog);
+
+  elements.memberPhoneInput.addEventListener("input", () => {
+    elements.memberPhoneInput.value = formatPhoneForDisplay(elements.memberPhoneInput.value);
+  });
+
+  elements.memberPhoneInput.addEventListener("blur", () => {
+    elements.memberPhoneInput.value = normalizePhone(elements.memberPhoneInput.value);
+  });
 
   elements.memberForm.addEventListener("submit", (event) => {
     event.preventDefault();

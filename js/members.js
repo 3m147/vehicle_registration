@@ -1,7 +1,31 @@
 import { updateMember } from "./storage.js";
 
 export function normalizePhone(phone) {
-  return phone.replace(/[^\d]/g, "").replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
+  let digits = phone.replace(/[^\d]/g, "");
+
+  if (digits.length === 8) {
+    digits = `010${digits}`;
+  }
+
+  if (digits.length === 10 && digits.startsWith("10")) {
+    digits = `0${digits}`;
+  }
+
+  return formatPhoneForDisplay(digits);
+}
+
+export function formatPhoneForDisplay(phone) {
+  const digits = phone.replace(/[^\d]/g, "").slice(0, 11);
+
+  if (digits.length <= 3) {
+    return digits;
+  }
+
+  if (digits.length <= 7) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
 }
 
 export function maskPhone(phone) {
