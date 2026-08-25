@@ -44,8 +44,7 @@ export function searchMembers(members, keyword) {
       member.company,
       member.name,
       member.phone,
-      member.vehicle,
-      member.defaultPurpose
+      member.vehicle
     ]
       .join(" ")
       .toLowerCase();
@@ -57,4 +56,3 @@ export function searchMembers(members, keyword) {
 export function toggleFavorite(memberId, currentValue) {
   return updateMember(memberId, { favorite: !currentValue });
 }
-

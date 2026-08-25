@@ -56,7 +56,6 @@ const elements = {
   memberPhoneInput: document.querySelector("#memberPhoneInput"),
   memberVehicleInput: document.querySelector("#memberVehicleInput"),
   memberCameraInput: document.querySelector("#memberCameraInput"),
-  memberPurposeInput: document.querySelector("#memberPurposeInput"),
   memberAddNowInput: document.querySelector("#memberAddNowInput"),
   closeMemberModalButton: document.querySelector("#closeMemberModalButton"),
   cancelMemberButton: document.querySelector("#cancelMemberButton"),
@@ -397,7 +396,6 @@ function resetMemberForm() {
   elements.memberPhoneInput.value = "";
   elements.memberVehicleInput.value = "";
   elements.memberCameraInput.value = "X";
-  elements.memberPurposeInput.value = elements.purposeInput.value || "";
   elements.memberAddNowInput.checked = true;
 }
 
@@ -411,7 +409,6 @@ function openMemberDialog(member) {
     elements.memberPhoneInput.value = member.phone || "";
     elements.memberVehicleInput.value = member.vehicle || "";
     elements.memberCameraInput.value = member.camera || "X";
-    elements.memberPurposeInput.value = member.defaultPurpose || "";
     elements.memberAddNowInput.checked = state.selectedMemberIds.includes(member.id);
   } else {
     resetMemberForm();
@@ -430,8 +427,7 @@ function saveMemberFromForm() {
     name: elements.memberNameInput.value.trim(),
     phone: normalizePhone(elements.memberPhoneInput.value.trim()),
     vehicle: elements.memberVehicleInput.value.trim(),
-    camera: elements.memberCameraInput.value,
-    defaultPurpose: elements.memberPurposeInput.value.trim()
+    camera: elements.memberCameraInput.value
   };
 
   if (!memberData.name) {

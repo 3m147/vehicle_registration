@@ -75,7 +75,6 @@ export function addMember(member) {
     phone: "",
     vehicle: "",
     camera: "X",
-    defaultPurpose: "",
     favorite: false,
     lastUsedAt: "",
     ...member
