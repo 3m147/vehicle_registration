@@ -53,20 +53,20 @@
             <datalist id="purposeList"></datalist>
           </label>
 
-          <label>
-            담당부서
-            <input type="text" id="departmentInput" placeholder="담당부서" autocomplete="organization-title" />
-          </label>
-
-          <label>
-            담당자
-            <input type="text" id="managerInput" placeholder="담당자" autocomplete="name" />
-          </label>
-
           <details class="wide-field optional-details">
-            <summary>비고 및 휴대폰 카메라 사유</summary>
+            <summary>담당 정보, 비고 및 휴대폰 카메라 사유</summary>
 
             <div class="optional-fields">
+              <label>
+                담당부서
+                <input type="text" id="departmentInput" placeholder="담당부서" autocomplete="organization-title" />
+              </label>
+
+              <label>
+                담당자
+                <input type="text" id="managerInput" placeholder="담당자" autocomplete="name" />
+              </label>
+
               <label>
                 휴대폰 카메라 허용 필요 사유
                 <input type="text" id="cameraReasonInput" value="서류 제출용" autocomplete="off" />
