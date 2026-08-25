@@ -129,6 +129,7 @@ export async function createExcelFromTemplate(templateArrayBuffer, template, app
   setCellValue(worksheet, mapping.department, application.department);
   setCellValue(worksheet, mapping.manager, application.manager);
   setCellValue(worksheet, mapping.note, application.note);
+  setCellValue(worksheet, mapping.cameraReason, application.cameraReason || "서류 제출용");
   fillVisitorsToExcel(worksheet, visitors, application, mapping);
 
   const buffer = await workbook.xlsx.writeBuffer();

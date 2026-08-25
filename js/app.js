@@ -32,6 +32,7 @@ const elements = {
   purposeInput: document.querySelector("#purposeInput"),
   departmentInput: document.querySelector("#departmentInput"),
   managerInput: document.querySelector("#managerInput"),
+  cameraReasonInput: document.querySelector("#cameraReasonInput"),
   noteInput: document.querySelector("#noteInput"),
   purposeList: document.querySelector("#purposeList"),
   templateHelpText: document.querySelector("#templateHelpText"),
@@ -107,6 +108,7 @@ function getApplicationFormData() {
     purpose: elements.purposeInput.value.trim(),
     department: elements.departmentInput.value.trim(),
     manager: elements.managerInput.value.trim(),
+    cameraReason: elements.cameraReasonInput.value.trim() || "서류 제출용",
     note: elements.noteInput.value.trim()
   };
 }
@@ -516,6 +518,7 @@ function copyApplication(applicationId) {
   elements.purposeInput.value = application.purpose;
   elements.departmentInput.value = application.department || "";
   elements.managerInput.value = application.manager || "";
+  elements.cameraReasonInput.value = application.cameraReason || "서류 제출용";
   elements.noteInput.value = application.note || "";
   state.selectedMemberIds = application.visitorIds.filter((id) => state.members.some((member) => member.id === id));
   showMessage("최근 신청 정보를 불러왔습니다. 날짜를 확인한 뒤 생성하세요.", "success");
@@ -535,6 +538,7 @@ function bindEvents() {
     elements.purposeInput,
     elements.departmentInput,
     elements.managerInput,
+    elements.cameraReasonInput,
     elements.noteInput
   ].forEach((input) => input.addEventListener("input", renderPreview));
 

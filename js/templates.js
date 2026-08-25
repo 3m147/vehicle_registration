@@ -25,6 +25,7 @@ export const EXCEL_TEMPLATES = {
       department: "D6",
       manager: "",
       note: "B29",
+      cameraReason: "F29",
       visitors: {
         startRow: 13,
         maxRows: 15,
@@ -58,6 +59,7 @@ export const EXCEL_TEMPLATES = {
       department: "D6",
       manager: "",
       note: "B30",
+      cameraReason: "F30",
       visitors: {
         startRow: 14,
         maxRows: 15,
@@ -81,4 +83,3 @@ export function getTemplateByVisitDates(startDate, endDate) {
 
   return EXCEL_TEMPLATES.oneDay;
 }
-

@@ -63,10 +63,21 @@
             <input type="text" id="managerInput" placeholder="담당자" autocomplete="name" />
           </label>
 
-          <label class="wide-field">
-            비고
-            <textarea id="noteInput" rows="3" placeholder="필요한 메모를 입력하세요."></textarea>
-          </label>
+          <details class="wide-field optional-details">
+            <summary>비고 및 휴대폰 카메라 사유</summary>
+
+            <div class="optional-fields">
+              <label>
+                휴대폰 카메라 허용 필요 사유
+                <input type="text" id="cameraReasonInput" value="서류 제출용" autocomplete="off" />
+              </label>
+
+              <label>
+                비고
+                <textarea id="noteInput" rows="3" placeholder="필요한 메모를 입력하세요."></textarea>
+              </label>
+            </div>
+          </details>
         </form>
       </section>
 

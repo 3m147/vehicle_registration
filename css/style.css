@@ -246,6 +246,38 @@ textarea:focus {
   grid-column: 1 / -1;
 }
 
+.optional-details {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.optional-details summary {
+  min-height: 52px;
+  padding: 13px 14px;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+  list-style-position: inside;
+}
+
+.optional-details[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.optional-fields {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.optional-details summary:focus-visible {
+  outline: 4px solid rgba(245, 158, 11, 0.4);
+  outline-offset: 2px;
+}
+
 .primary-button,
 .secondary-button,
 .text-button,
