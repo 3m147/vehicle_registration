@@ -288,8 +288,7 @@ textarea:focus {
 .secondary-button,
 .text-button,
 .icon-button,
-.chip,
-.group-delete-button {
+.chip {
   min-height: 46px;
   border: 0;
   border-radius: 8px;
@@ -328,7 +327,6 @@ textarea:focus {
 .text-button:focus-visible,
 .icon-button:focus-visible,
 .chip:focus-visible,
-.group-delete-button:focus-visible,
 .member-card:focus-within {
   outline: 4px solid rgba(245, 158, 11, 0.4);
   outline-offset: 2px;
@@ -336,6 +334,26 @@ textarea:focus {
 
 .text-button.danger {
   color: var(--danger);
+}
+
+.danger-button {
+  border-color: rgba(220, 38, 38, 0.28);
+  color: var(--danger);
+}
+
+.danger-action {
+  background: var(--danger);
+}
+
+.danger-action:hover {
+  background: #b91c1c;
+}
+
+.danger-action:disabled,
+.primary-button:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
 }
 
 .compact {
@@ -369,12 +387,6 @@ textarea:focus {
   gap: 10px;
 }
 
-.group-chip {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 4px;
-}
-
 .chip {
   padding: 10px 13px;
   background: var(--primary-soft);
@@ -385,18 +397,6 @@ textarea:focus {
 .chip.active {
   background: var(--primary);
   color: #fff;
-}
-
-.group-delete-button {
-  padding: 10px 11px;
-  border: 1px solid rgba(220, 38, 38, 0.28);
-  background: #fff1f2;
-  color: var(--danger);
-  font-size: 15px;
-}
-
-.group-delete-button:hover {
-  background: #ffe4e6;
 }
 
 .member-list {

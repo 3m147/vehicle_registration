@@ -52,6 +52,14 @@ const elements = {
   generateExcelButton: document.querySelector("#generateExcelButton"),
   openMemberModalButton: document.querySelector("#openMemberModalButton"),
   openGroupModalButton: document.querySelector("#openGroupModalButton"),
+  openGroupDeleteDialogButton: document.querySelector("#openGroupDeleteDialogButton"),
+  groupDeleteDialog: document.querySelector("#groupDeleteDialog"),
+  groupDeleteForm: document.querySelector("#groupDeleteForm"),
+  groupDeleteSelect: document.querySelector("#groupDeleteSelect"),
+  groupDeleteHelp: document.querySelector("#groupDeleteHelp"),
+  deleteGroupButton: document.querySelector("#deleteGroupButton"),
+  closeGroupDeleteDialogButton: document.querySelector("#closeGroupDeleteDialogButton"),
+  cancelGroupDeleteButton: document.querySelector("#cancelGroupDeleteButton"),
   memberDialog: document.querySelector("#memberDialog"),
   memberForm: document.querySelector("#memberForm"),
   memberDialogTitle: document.querySelector("#memberDialogTitle"),
@@ -288,14 +296,48 @@ function renderGroups() {
     ...groups.map((group) => {
       const active = state.selectedCompanyFilter === group.name ? "active" : "";
       const groupName = escapeHtml(group.name);
-      return `
-        <span class="group-chip">
-          <button type="button" class="chip ${active}" data-company-filter="${groupName}">${groupName}</button>
-          <button type="button" class="group-delete-button" data-delete-group-id="${escapeHtml(group.id)}" aria-label="${groupName} 그룹 삭제">삭제</button>
-        </span>
-      `;
+      return `<button type="button" class="chip ${active}" data-company-filter="${groupName}">${groupName}</button>`;
     })
   ].join("");
+}
+
+function renderGroupDeleteOptions(selectedGroupId = "") {
+  const groups = getGroups();
+
+  if (!groups.length) {
+    elements.groupDeleteSelect.innerHTML = '<option value="">삭제할 그룹이 없습니다</option>';
+    elements.groupDeleteSelect.disabled = true;
+    elements.deleteGroupButton.disabled = true;
+    elements.groupDeleteHelp.textContent = "먼저 소속/회사 그룹을 추가해주세요.";
+    return;
+  }
+
+  elements.groupDeleteSelect.disabled = false;
+  elements.deleteGroupButton.disabled = false;
+  elements.groupDeleteSelect.innerHTML = groups
+    .map((group) => {
+      const selected = group.id === selectedGroupId ? "selected" : "";
+      return `<option value="${escapeHtml(group.id)}" ${selected}>${escapeHtml(group.name)}</option>`;
+    })
+    .join("");
+
+  updateGroupDeleteHelp();
+}
+
+function getSelectedDeleteGroup() {
+  return getGroups().find((group) => group.id === elements.groupDeleteSelect.value);
+}
+
+function updateGroupDeleteHelp() {
+  const group = getSelectedDeleteGroup();
+
+  if (!group) {
+    elements.groupDeleteHelp.textContent = "삭제할 그룹을 선택해주세요.";
+    return;
+  }
+
+  const groupMemberCount = state.members.filter((member) => member.company === group.name).length;
+  elements.groupDeleteHelp.textContent = `${group.name} 그룹을 삭제하면 해당 그룹의 출입자 ${groupMemberCount}명도 함께 삭제됩니다.`;
 }
 
 function renderCompanyOptions(selectedCompany = "") {
@@ -624,32 +666,6 @@ function bindEvents() {
   });
 
   elements.memberGroups.addEventListener("click", (event) => {
-    const deleteButton = event.target.closest("[data-delete-group-id]");
-
-    if (deleteButton) {
-      const group = getGroups().find((savedGroup) => savedGroup.id === deleteButton.dataset.deleteGroupId);
-      if (!group) return;
-
-      const groupMemberCount = state.members.filter((member) => member.company === group.name).length;
-      const confirmed = window.confirm(
-        `${group.name} 그룹을 삭제하면 해당 그룹의 출입자 ${groupMemberCount}명도 모두 삭제됩니다. 삭제하시겠습니까?`
-      );
-
-      if (!confirmed) return;
-
-      const deletedMemberIds = deleteMembersByCompany(group.name);
-      deleteGroup(group.id);
-      state.selectedMemberIds = state.selectedMemberIds.filter((memberId) => !deletedMemberIds.includes(memberId));
-
-      if (state.selectedCompanyFilter === group.name) {
-        state.selectedCompanyFilter = "";
-      }
-
-      showMessage(`${group.name} 그룹과 출입자 ${deletedMemberIds.length}명을 삭제했습니다.`, "success");
-      renderAll();
-      return;
-    }
-
     const button = event.target.closest("[data-company-filter]");
     if (!button) return;
 
@@ -679,6 +695,41 @@ function bindEvents() {
     } catch (error) {
       showMessage(error.message, "error");
     }
+  });
+  elements.openGroupDeleteDialogButton.addEventListener("click", () => {
+    renderGroupDeleteOptions();
+    elements.groupDeleteDialog.showModal();
+  });
+  elements.closeGroupDeleteDialogButton.addEventListener("click", () => elements.groupDeleteDialog.close());
+  elements.cancelGroupDeleteButton.addEventListener("click", () => elements.groupDeleteDialog.close());
+  elements.groupDeleteSelect.addEventListener("change", updateGroupDeleteHelp);
+  elements.groupDeleteForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const group = getSelectedDeleteGroup();
+    if (!group) {
+      showMessage("삭제할 그룹을 선택해주세요.", "error");
+      return;
+    }
+
+    const groupMemberCount = state.members.filter((member) => member.company === group.name).length;
+    const confirmed = window.confirm(
+      `${group.name} 그룹을 삭제하면 해당 그룹의 출입자 ${groupMemberCount}명도 모두 삭제됩니다. 삭제하시겠습니까?`
+    );
+
+    if (!confirmed) return;
+
+    const deletedMemberIds = deleteMembersByCompany(group.name);
+    deleteGroup(group.id);
+    state.selectedMemberIds = state.selectedMemberIds.filter((memberId) => !deletedMemberIds.includes(memberId));
+
+    if (state.selectedCompanyFilter === group.name) {
+      state.selectedCompanyFilter = "";
+    }
+
+    elements.groupDeleteDialog.close();
+    showMessage(`${group.name} 그룹과 출입자 ${deletedMemberIds.length}명을 삭제했습니다.`, "success");
+    renderAll();
   });
   elements.closeMemberModalButton.addEventListener("click", closeMemberDialog);
   elements.cancelMemberButton.addEventListener("click", closeMemberDialog);
