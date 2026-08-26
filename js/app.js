@@ -24,7 +24,8 @@ const state = {
   selectedCompanyFilter: "",
   templateArrayBuffer: null,
   loadedTemplateId: "",
-  editingMemberId: null
+  editingMemberId: null,
+  deletingGroupId: ""
 };
 
 const elements = {
@@ -55,7 +56,7 @@ const elements = {
   openGroupDeleteDialogButton: document.querySelector("#openGroupDeleteDialogButton"),
   groupDeleteDialog: document.querySelector("#groupDeleteDialog"),
   groupDeleteForm: document.querySelector("#groupDeleteForm"),
-  groupDeleteSelect: document.querySelector("#groupDeleteSelect"),
+  groupDeleteList: document.querySelector("#groupDeleteList"),
   groupDeleteHelp: document.querySelector("#groupDeleteHelp"),
   deleteGroupButton: document.querySelector("#deleteGroupButton"),
   closeGroupDeleteDialogButton: document.querySelector("#closeGroupDeleteDialogButton"),
@@ -305,19 +306,29 @@ function renderGroupDeleteOptions(selectedGroupId = "") {
   const groups = getGroups();
 
   if (!groups.length) {
-    elements.groupDeleteSelect.innerHTML = '<option value="">삭제할 그룹이 없습니다</option>';
-    elements.groupDeleteSelect.disabled = true;
+    state.deletingGroupId = "";
+    elements.groupDeleteList.innerHTML = '<p class="empty-text">삭제할 그룹이 없습니다.</p>';
     elements.deleteGroupButton.disabled = true;
     elements.groupDeleteHelp.textContent = "먼저 소속/회사 그룹을 추가해주세요.";
     return;
   }
 
-  elements.groupDeleteSelect.disabled = false;
+  state.deletingGroupId = selectedGroupId || groups[0].id;
   elements.deleteGroupButton.disabled = false;
-  elements.groupDeleteSelect.innerHTML = groups
+  elements.groupDeleteList.innerHTML = groups
     .map((group) => {
-      const selected = group.id === selectedGroupId ? "selected" : "";
-      return `<option value="${escapeHtml(group.id)}" ${selected}>${escapeHtml(group.name)}</option>`;
+      const selected = group.id === state.deletingGroupId;
+      const groupMemberCount = state.members.filter((member) => member.company === group.name).length;
+
+      return `
+        <button type="button" class="group-delete-choice ${selected ? "active" : ""}" data-group-delete-choice="${escapeHtml(group.id)}" role="option" aria-selected="${selected}">
+          <span>
+            <strong>${escapeHtml(group.name)}</strong>
+            <small>등록 인원 ${groupMemberCount}명</small>
+          </span>
+          <span class="choice-mark" aria-hidden="true">✓</span>
+        </button>
+      `;
     })
     .join("");
 
@@ -325,7 +336,7 @@ function renderGroupDeleteOptions(selectedGroupId = "") {
 }
 
 function getSelectedDeleteGroup() {
-  return getGroups().find((group) => group.id === elements.groupDeleteSelect.value);
+  return getGroups().find((group) => group.id === state.deletingGroupId);
 }
 
 function updateGroupDeleteHelp() {
@@ -702,7 +713,13 @@ function bindEvents() {
   });
   elements.closeGroupDeleteDialogButton.addEventListener("click", () => elements.groupDeleteDialog.close());
   elements.cancelGroupDeleteButton.addEventListener("click", () => elements.groupDeleteDialog.close());
-  elements.groupDeleteSelect.addEventListener("change", updateGroupDeleteHelp);
+  elements.groupDeleteList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-group-delete-choice]");
+    if (!button) return;
+
+    state.deletingGroupId = button.dataset.groupDeleteChoice;
+    renderGroupDeleteOptions(state.deletingGroupId);
+  });
   elements.groupDeleteForm.addEventListener("submit", (event) => {
     event.preventDefault();
 

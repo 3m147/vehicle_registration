@@ -338,7 +338,12 @@ textarea:focus {
 
 .danger-button {
   border-color: rgba(220, 38, 38, 0.28);
+  background: #fff;
   color: var(--danger);
+}
+
+.danger-button:hover {
+  background: #fff1f2;
 }
 
 .danger-action {
@@ -565,6 +570,71 @@ textarea:focus {
   margin: 0;
   color: var(--muted);
   font-size: 15px;
+}
+
+.group-delete-list {
+  display: grid;
+  gap: 10px;
+  max-height: min(48vh, 360px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.group-delete-choice {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  text-align: left;
+}
+
+.group-delete-choice strong,
+.group-delete-choice small {
+  display: block;
+}
+
+.group-delete-choice strong {
+  font-size: 17px;
+}
+
+.group-delete-choice small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.group-delete-choice.active {
+  border-color: var(--danger);
+  background: #fff7f7;
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.18);
+}
+
+.group-delete-choice:focus-visible {
+  outline: 4px solid rgba(245, 158, 11, 0.4);
+  outline-offset: 2px;
+}
+
+.choice-mark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: transparent;
+  font-weight: 900;
+}
+
+.group-delete-choice.active .choice-mark {
+  background: var(--danger);
+  color: #fff;
 }
 
 .member-dialog {

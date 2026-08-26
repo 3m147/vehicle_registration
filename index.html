@@ -185,16 +185,12 @@
           <button type="button" class="icon-button" id="closeGroupDeleteDialogButton" aria-label="닫기">×</button>
         </div>
 
-        <label>
-          삭제할 소속 / 회사 그룹
-          <select id="groupDeleteSelect"></select>
-        </label>
-
+        <div id="groupDeleteList" class="group-delete-list" role="listbox" aria-label="삭제할 소속 / 회사 그룹"></div>
         <p class="helper-text" id="groupDeleteHelp"></p>
 
         <div class="dialog-actions">
           <button type="button" class="secondary-button" id="cancelGroupDeleteButton">취소</button>
-          <button type="submit" class="primary-button danger-action" id="deleteGroupButton">삭제</button>
+          <button type="submit" class="primary-button danger-action" id="deleteGroupButton">선택한 그룹 삭제</button>
         </div>
       </form>
     </dialog>
