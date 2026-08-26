@@ -3,7 +3,9 @@ import {
   addApplication,
   addGroup,
   addMember,
+  deleteGroup,
   deleteMember,
+  deleteMembersByCompany,
   getApplications,
   getGroups,
   getMembers,
@@ -285,7 +287,13 @@ function renderGroups() {
     `<button type="button" class="chip ${allSelected}" data-company-filter="">전체</button>`,
     ...groups.map((group) => {
       const active = state.selectedCompanyFilter === group.name ? "active" : "";
-      return `<button type="button" class="chip ${active}" data-company-filter="${escapeHtml(group.name)}">${escapeHtml(group.name)}</button>`;
+      const groupName = escapeHtml(group.name);
+      return `
+        <span class="group-chip">
+          <button type="button" class="chip ${active}" data-company-filter="${groupName}">${groupName}</button>
+          <button type="button" class="group-delete-button" data-delete-group-id="${escapeHtml(group.id)}" aria-label="${groupName} 그룹 삭제">삭제</button>
+        </span>
+      `;
     })
   ].join("");
 }
@@ -616,6 +624,32 @@ function bindEvents() {
   });
 
   elements.memberGroups.addEventListener("click", (event) => {
+    const deleteButton = event.target.closest("[data-delete-group-id]");
+
+    if (deleteButton) {
+      const group = getGroups().find((savedGroup) => savedGroup.id === deleteButton.dataset.deleteGroupId);
+      if (!group) return;
+
+      const groupMemberCount = state.members.filter((member) => member.company === group.name).length;
+      const confirmed = window.confirm(
+        `${group.name} 그룹을 삭제하면 해당 그룹의 출입자 ${groupMemberCount}명도 모두 삭제됩니다. 삭제하시겠습니까?`
+      );
+
+      if (!confirmed) return;
+
+      const deletedMemberIds = deleteMembersByCompany(group.name);
+      deleteGroup(group.id);
+      state.selectedMemberIds = state.selectedMemberIds.filter((memberId) => !deletedMemberIds.includes(memberId));
+
+      if (state.selectedCompanyFilter === group.name) {
+        state.selectedCompanyFilter = "";
+      }
+
+      showMessage(`${group.name} 그룹과 출입자 ${deletedMemberIds.length}명을 삭제했습니다.`, "success");
+      renderAll();
+      return;
+    }
+
     const button = event.target.closest("[data-company-filter]");
     if (!button) return;
 

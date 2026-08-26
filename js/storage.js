@@ -93,6 +93,14 @@ export function deleteMember(memberId) {
   saveMembers(getMembers().filter((member) => member.id !== memberId));
 }
 
+export function deleteMembersByCompany(companyName) {
+  const members = getMembers();
+  const deletedMemberIds = members.filter((member) => member.company === companyName).map((member) => member.id);
+
+  saveMembers(members.filter((member) => member.company !== companyName));
+  return deletedMemberIds;
+}
+
 export function touchMembers(memberIds, usedDate) {
   const today = usedDate || new Date().toISOString().slice(0, 10);
 
@@ -154,6 +162,13 @@ export function addGroup(groupName, memberIds = []) {
 
   writeJson(STORAGE_KEYS.groups, [group, ...groups]);
   return group;
+}
+
+export function deleteGroup(groupId) {
+  writeJson(
+    STORAGE_KEYS.groups,
+    getGroups().filter((group) => group.id !== groupId)
+  );
 }
 
 export function exportAllData() {
