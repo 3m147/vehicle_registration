@@ -374,6 +374,11 @@ textarea:focus {
   font-size: 16px;
 }
 
+.chip.active {
+  background: var(--primary);
+  color: #fff;
+}
+
 .member-list {
   display: grid;
   gap: 12px;

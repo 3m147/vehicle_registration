@@ -19,6 +19,7 @@ import { getTemplateByVisitDates } from "./templates.js";
 const state = {
   members: [],
   selectedMemberIds: [],
+  selectedCompanyFilter: "",
   templateArrayBuffer: null,
   loadedTemplateId: "",
   editingMemberId: null
@@ -213,10 +214,15 @@ function addMemberToSelection(memberId) {
 }
 
 function renderMemberList() {
-  const filteredMembers = searchMembers(state.members, elements.memberSearchInput.value);
+  const searchedMembers = searchMembers(state.members, elements.memberSearchInput.value);
+  const filteredMembers = state.selectedCompanyFilter
+    ? searchedMembers.filter((member) => member.company === state.selectedCompanyFilter)
+    : searchedMembers;
 
   if (!filteredMembers.length) {
-    elements.memberList.innerHTML = '<p class="empty-text">등록된 출입자가 없습니다.</p>';
+    elements.memberList.innerHTML = state.selectedCompanyFilter
+      ? `<p class="empty-text">${escapeHtml(state.selectedCompanyFilter)} 그룹에 표시할 출입자가 없습니다.</p>`
+      : '<p class="empty-text">등록된 출입자가 없습니다.</p>';
     return;
   }
 
@@ -265,17 +271,23 @@ function renderRecentMembers() {
 
 function renderGroups() {
   const groups = getGroups();
+  const allSelected = state.selectedCompanyFilter ? "" : "active";
 
   if (!groups.length) {
-    elements.memberGroups.innerHTML = '<p class="empty-text">등록된 소속/회사 그룹이 없습니다.</p>';
+    elements.memberGroups.innerHTML = `
+      <button type="button" class="chip ${allSelected}" data-company-filter="">전체</button>
+      <p class="empty-text">등록된 소속/회사 그룹이 없습니다.</p>
+    `;
     return;
   }
 
-  elements.memberGroups.innerHTML = groups
-    .map((group) => {
-      return `<span class="chip">${escapeHtml(group.name)}</span>`;
+  elements.memberGroups.innerHTML = [
+    `<button type="button" class="chip ${allSelected}" data-company-filter="">전체</button>`,
+    ...groups.map((group) => {
+      const active = state.selectedCompanyFilter === group.name ? "active" : "";
+      return `<button type="button" class="chip ${active}" data-company-filter="${escapeHtml(group.name)}">${escapeHtml(group.name)}</button>`;
     })
-    .join("");
+  ].join("");
 }
 
 function renderCompanyOptions(selectedCompany = "") {
@@ -603,6 +615,14 @@ function bindEvents() {
     renderAll();
   });
 
+  elements.memberGroups.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-company-filter]");
+    if (!button) return;
+
+    state.selectedCompanyFilter = button.dataset.companyFilter || "";
+    renderAll();
+  });
+
   elements.selectedMembers.addEventListener("click", (event) => {
     const button = event.target.closest("[data-member-id]");
     if (!button) return;
@@ -619,6 +639,7 @@ function bindEvents() {
 
     try {
       addGroup(groupName);
+      state.selectedCompanyFilter = groupName.trim();
       showMessage("소속/회사 그룹을 추가했습니다.", "success");
       renderAll();
     } catch (error) {
