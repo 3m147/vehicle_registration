@@ -81,7 +81,7 @@ function fillVisitorsToExcel(worksheet, visitors, application, mapping) {
     }
 
     if (visitorMapping.cameraColumn) {
-      worksheet.getCell(`${visitorMapping.cameraColumn}${row}`).value = visitor.camera || "X";
+      worksheet.getCell(`${visitorMapping.cameraColumn}${row}`).value = application.camera || "O";
     }
 
     if (visitorMapping.purposeColumn) {

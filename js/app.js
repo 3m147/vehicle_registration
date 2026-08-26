@@ -37,6 +37,7 @@ const elements = {
   departmentInput: document.querySelector("#departmentInput"),
   managerInput: document.querySelector("#managerInput"),
   cameraReasonInput: document.querySelector("#cameraReasonInput"),
+  cameraInput: document.querySelector("#cameraInput"),
   noteInput: document.querySelector("#noteInput"),
   purposeList: document.querySelector("#purposeList"),
   templateHelpText: document.querySelector("#templateHelpText"),
@@ -69,7 +70,6 @@ const elements = {
   memberNameInput: document.querySelector("#memberNameInput"),
   memberPhoneInput: document.querySelector("#memberPhoneInput"),
   memberVehicleInput: document.querySelector("#memberVehicleInput"),
-  memberCameraInput: document.querySelector("#memberCameraInput"),
   memberAddNowInput: document.querySelector("#memberAddNowInput"),
   closeMemberModalButton: document.querySelector("#closeMemberModalButton"),
   cancelMemberButton: document.querySelector("#cancelMemberButton")
@@ -121,6 +121,7 @@ function getApplicationFormData() {
     department: elements.departmentInput.value.trim(),
     manager: elements.managerInput.value.trim(),
     cameraReason: elements.cameraReasonInput.value.trim() || "서류 제출용",
+    camera: elements.cameraInput.value || "O",
     note: elements.noteInput.value.trim()
   };
 }
@@ -254,7 +255,6 @@ function renderMemberList() {
           <div class="member-meta">
             <span>${escapeHtml(maskPhone(member.phone))}</span>
             <span>${escapeHtml(maskVehicle(member.vehicle))}</span>
-            <span>카메라 ${escapeHtml(member.camera || "X")}</span>
           </div>
           <div class="card-actions">
             <button type="button" class="text-button" data-action="favorite">${favorite}</button>
@@ -403,6 +403,7 @@ function renderPreview() {
       <div><dt>Excel 양식</dt><dd>${escapeHtml(template.name)}</dd></div>
       <div><dt>출입일</dt><dd>${escapeHtml(dateText)}</dd></div>
       <div><dt>출입목적</dt><dd>${escapeHtml(application.purpose || "-")}</dd></div>
+      <div><dt>휴대폰 카메라</dt><dd>${escapeHtml(application.camera || "O")}</dd></div>
       <div><dt>출입인원</dt><dd>${selectedMembers.length}명</dd></div>
     </dl>
     <ol>
@@ -486,7 +487,6 @@ function resetMemberForm() {
   elements.memberNameInput.value = "";
   elements.memberPhoneInput.value = "";
   elements.memberVehicleInput.value = "";
-  elements.memberCameraInput.value = "X";
   elements.memberAddNowInput.checked = true;
 }
 
@@ -499,7 +499,6 @@ function openMemberDialog(member) {
     elements.memberNameInput.value = member.name || "";
     elements.memberPhoneInput.value = member.phone || "";
     elements.memberVehicleInput.value = member.vehicle || "";
-    elements.memberCameraInput.value = member.camera || "X";
     elements.memberAddNowInput.checked = state.selectedMemberIds.includes(member.id);
   } else {
     resetMemberForm();
@@ -517,8 +516,7 @@ function saveMemberFromForm() {
     company: elements.memberCompanyInput.value.trim(),
     name: elements.memberNameInput.value.trim(),
     phone: normalizePhone(elements.memberPhoneInput.value.trim()),
-    vehicle: elements.memberVehicleInput.value.trim(),
-    camera: elements.memberCameraInput.value
+    vehicle: elements.memberVehicleInput.value.trim()
   };
 
   if (!memberData.name) {
@@ -608,6 +606,7 @@ function copyApplication(applicationId) {
   elements.departmentInput.value = application.department || "";
   elements.managerInput.value = application.manager || "";
   elements.cameraReasonInput.value = application.cameraReason || "서류 제출용";
+  elements.cameraInput.value = application.camera || "O";
   elements.noteInput.value = application.note || "";
   state.selectedMemberIds = application.visitorIds.filter((id) => state.members.some((member) => member.id === id));
   showMessage("최근 신청 정보를 불러왔습니다. 날짜를 확인한 뒤 생성하세요.", "success");
@@ -628,6 +627,7 @@ function bindEvents() {
     elements.departmentInput,
     elements.managerInput,
     elements.cameraReasonInput,
+    elements.cameraInput,
     elements.noteInput
   ].forEach((input) => input.addEventListener("input", renderPreview));
 
