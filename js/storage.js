@@ -46,12 +46,7 @@ export function createId(prefix = "id") {
 }
 
 export function getMembers() {
-  return readJson(STORAGE_KEYS.members, []).map((member) => {
-    return {
-      ...member,
-      company: member.company === "한성엔지니어링" ? "" : member.company
-    };
-  });
+  return readJson(STORAGE_KEYS.members, []);
 }
 
 export function saveMembers(members) {
