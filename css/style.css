@@ -85,12 +85,18 @@ h3 {
 }
 
 .dialog-actions,
+.member-title-actions,
 .panel-title-row,
 .section-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.member-title-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .app-shell {

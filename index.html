@@ -84,7 +84,10 @@
       <section class="panel member-panel" aria-labelledby="memberTitle">
         <div class="panel-title-row">
           <h2 id="memberTitle">출입자</h2>
-          <button type="button" class="primary-button compact" id="openMemberModalButton">+ 신규 출입자</button>
+          <div class="member-title-actions">
+            <button type="button" class="secondary-button compact" id="openGroupModalButton">+ 그룹 추가</button>
+            <button type="button" class="primary-button compact" id="openMemberModalButton">+ 신규 출입자</button>
+          </div>
         </div>
 
         <label class="search-field">
@@ -98,10 +101,7 @@
         </div>
 
         <div class="quick-section">
-          <div class="section-title-row">
-            <h3>출입자 그룹</h3>
-            <button type="button" class="text-button" id="saveGroupButton">현재 선택 저장</button>
-          </div>
+          <h3>소속 / 회사 그룹</h3>
           <div id="memberGroups" class="chip-list"></div>
         </div>
 
@@ -139,7 +139,7 @@
 
         <label>
           소속 / 회사명
-          <input type="text" id="memberCompanyInput" placeholder="처음 사용하는 경우 직접 입력" autocomplete="organization" />
+          <select id="memberCompanyInput"></select>
         </label>
 
         <label>

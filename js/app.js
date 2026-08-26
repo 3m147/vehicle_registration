@@ -48,6 +48,7 @@ const elements = {
   history: document.querySelector("#applicationHistory"),
   generateExcelButton: document.querySelector("#generateExcelButton"),
   openMemberModalButton: document.querySelector("#openMemberModalButton"),
+  openGroupModalButton: document.querySelector("#openGroupModalButton"),
   memberDialog: document.querySelector("#memberDialog"),
   memberForm: document.querySelector("#memberForm"),
   memberDialogTitle: document.querySelector("#memberDialogTitle"),
@@ -59,8 +60,7 @@ const elements = {
   memberCameraInput: document.querySelector("#memberCameraInput"),
   memberAddNowInput: document.querySelector("#memberAddNowInput"),
   closeMemberModalButton: document.querySelector("#closeMemberModalButton"),
-  cancelMemberButton: document.querySelector("#cancelMemberButton"),
-  saveGroupButton: document.querySelector("#saveGroupButton")
+  cancelMemberButton: document.querySelector("#cancelMemberButton")
 };
 
 function todayText() {
@@ -267,15 +267,31 @@ function renderGroups() {
   const groups = getGroups();
 
   if (!groups.length) {
-    elements.memberGroups.innerHTML = '<p class="empty-text">저장된 그룹이 없습니다.</p>';
+    elements.memberGroups.innerHTML = '<p class="empty-text">등록된 소속/회사 그룹이 없습니다.</p>';
     return;
   }
 
   elements.memberGroups.innerHTML = groups
     .map((group) => {
-      return `<button type="button" class="chip" data-group-id="${group.id}">${escapeHtml(group.name)}</button>`;
+      return `<span class="chip">${escapeHtml(group.name)}</span>`;
     })
     .join("");
+}
+
+function renderCompanyOptions(selectedCompany = "") {
+  const groups = getGroups();
+  const hasSelectedCompany = selectedCompany && groups.some((group) => group.name === selectedCompany);
+
+  elements.memberCompanyInput.innerHTML = [
+    '<option value="">소속/회사 그룹 선택</option>',
+    ...groups.map((group) => {
+      const selected = group.name === selectedCompany ? "selected" : "";
+      return `<option value="${escapeHtml(group.name)}" ${selected}>${escapeHtml(group.name)}</option>`;
+    }),
+    selectedCompany && !hasSelectedCompany
+      ? `<option value="${escapeHtml(selectedCompany)}" selected>${escapeHtml(selectedCompany)}</option>`
+      : ""
+  ].join("");
 }
 
 function renderSelectedMembers() {
@@ -393,7 +409,7 @@ function resetMemberForm() {
   state.editingMemberId = null;
   elements.memberDialogTitle.textContent = "신규 출입자";
   elements.memberIdInput.value = "";
-  elements.memberCompanyInput.value = "";
+  renderCompanyOptions();
   elements.memberNameInput.value = "";
   elements.memberPhoneInput.value = "";
   elements.memberVehicleInput.value = "";
@@ -406,7 +422,7 @@ function openMemberDialog(member) {
     state.editingMemberId = member.id;
     elements.memberDialogTitle.textContent = "출입자 수정";
     elements.memberIdInput.value = member.id;
-    elements.memberCompanyInput.value = member.company || "";
+    renderCompanyOptions(member.company || "");
     elements.memberNameInput.value = member.name || "";
     elements.memberPhoneInput.value = member.phone || "";
     elements.memberVehicleInput.value = member.vehicle || "";
@@ -587,17 +603,6 @@ function bindEvents() {
     renderAll();
   });
 
-  elements.memberGroups.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-group-id]");
-    if (!button) return;
-
-    const group = getGroups().find((item) => item.id === button.dataset.groupId);
-    if (!group) return;
-
-    group.memberIds.forEach(addMemberToSelection);
-    renderAll();
-  });
-
   elements.selectedMembers.addEventListener("click", (event) => {
     const button = event.target.closest("[data-member-id]");
     if (!button) return;
@@ -606,6 +611,20 @@ function bindEvents() {
   });
 
   elements.openMemberModalButton.addEventListener("click", () => openMemberDialog());
+  elements.openGroupModalButton.addEventListener("click", () => {
+    const groupName = window.prompt("추가할 소속/회사 그룹 이름을 입력하세요.");
+    if (!groupName) {
+      return;
+    }
+
+    try {
+      addGroup(groupName);
+      showMessage("소속/회사 그룹을 추가했습니다.", "success");
+      renderAll();
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  });
   elements.closeMemberModalButton.addEventListener("click", closeMemberDialog);
   elements.cancelMemberButton.addEventListener("click", closeMemberDialog);
 
@@ -625,22 +644,6 @@ function bindEvents() {
     } catch (error) {
       showMessage(error.message, "error");
     }
-  });
-
-  elements.saveGroupButton.addEventListener("click", () => {
-    if (!state.selectedMemberIds.length) {
-      showMessage("그룹으로 저장할 출입자를 먼저 선택해주세요.", "error");
-      return;
-    }
-
-    const groupName = window.prompt("그룹 이름을 입력하세요. 예: GOY1 UPS 정기점검팀");
-    if (!groupName) {
-      return;
-    }
-
-    addGroup(groupName.trim(), state.selectedMemberIds);
-    showMessage("출입자 그룹을 저장했습니다.", "success");
-    renderAll();
   });
 
   elements.generateExcelButton.addEventListener("click", generateExcel);

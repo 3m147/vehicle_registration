@@ -135,17 +135,29 @@ export function addApplication(application) {
 }
 
 export function getGroups() {
-  return readJson(STORAGE_KEYS.groups, []);
+  return readJson(STORAGE_KEYS.groups, []).filter((group) => group && group.name);
 }
 
-export function addGroup(groupName, memberIds) {
+export function addGroup(groupName, memberIds = []) {
+  const normalizedName = groupName.trim();
+  const groups = getGroups();
+  const duplicated = groups.some((group) => group.name === normalizedName);
+
+  if (!normalizedName) {
+    throw new Error("그룹 이름을 입력해주세요.");
+  }
+
+  if (duplicated) {
+    throw new Error("이미 등록된 그룹입니다.");
+  }
+
   const group = {
     id: createId("group"),
-    name: groupName,
+    name: normalizedName,
     memberIds
   };
 
-  writeJson(STORAGE_KEYS.groups, [group, ...getGroups()]);
+  writeJson(STORAGE_KEYS.groups, [group, ...groups]);
   return group;
 }
 
