@@ -11,6 +11,7 @@
     <header class="app-header">
       <div>
         <h1>출입신청 자동화</h1>
+        <button type="button" class="secondary-button compact" id="openSiteManagerButton">출입 사이트 수정</button>
       </div>
     </header>
 
@@ -191,6 +192,33 @@
         <div class="dialog-actions">
           <button type="button" class="secondary-button" id="cancelGroupDeleteButton">취소</button>
           <button type="submit" class="primary-button danger-action" id="deleteGroupButton">선택한 그룹 삭제</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="siteManagerDialog" class="member-dialog site-manager-dialog">
+      <form method="dialog">
+        <div class="panel-title-row">
+          <h2>출입 사이트 수정</h2>
+          <button type="button" class="icon-button" id="closeSiteManagerButton" aria-label="닫기">×</button>
+        </div>
+
+        <div class="site-add-row">
+          <label>
+            그룹
+            <select id="siteAddGroupSelect"></select>
+          </label>
+          <label>
+            새 사이트
+            <input type="text" id="siteAddNameInput" placeholder="예: GOY1" autocomplete="off" />
+          </label>
+          <button type="button" class="primary-button" id="addSiteButton">추가</button>
+        </div>
+
+        <div id="siteManagerList" class="site-manager-list"></div>
+
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" id="doneSiteManagerButton">닫기</button>
         </div>
       </form>
     </dialog>

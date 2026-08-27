@@ -1,13 +1,15 @@
 const STORAGE_KEYS = {
   members: "access_auto_members",
   applications: "access_auto_applications",
-  groups: "access_auto_groups"
+  groups: "access_auto_groups",
+  sites: "access_auto_sites"
 };
 
 const LEGACY_STORAGE_KEYS = {
   members: "hansung_access_members",
   applications: "hansung_access_applications",
-  groups: "hansung_access_groups"
+  groups: "hansung_access_groups",
+  sites: "hansung_access_sites"
 };
 
 function migrateLegacyData() {
@@ -171,13 +173,44 @@ export function deleteGroup(groupId) {
   );
 }
 
+function cloneSiteGroups(siteGroups) {
+  return siteGroups.map((group) => {
+    return {
+      group: group.group,
+      sites: Array.isArray(group.sites) ? [...group.sites] : []
+    };
+  });
+}
+
+export function getSiteGroups(defaultSiteGroups = []) {
+  const savedGroups = readJson(STORAGE_KEYS.sites, null);
+
+  if (!Array.isArray(savedGroups)) {
+    return cloneSiteGroups(defaultSiteGroups);
+  }
+
+  return savedGroups
+    .filter((group) => group && group.group)
+    .map((group) => {
+      return {
+        group: group.group,
+        sites: Array.isArray(group.sites) ? group.sites.filter(Boolean) : []
+      };
+    });
+}
+
+export function saveSiteGroups(siteGroups) {
+  writeJson(STORAGE_KEYS.sites, cloneSiteGroups(siteGroups));
+}
+
 export function exportAllData() {
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     members: getMembers(),
     applications: getApplications(),
-    groups: getGroups()
+    groups: getGroups(),
+    sites: getSiteGroups()
   };
 }
 
@@ -189,6 +222,10 @@ export function importAllData(data) {
   saveMembers(data.members);
   saveApplications(data.applications);
   writeJson(STORAGE_KEYS.groups, Array.isArray(data.groups) ? data.groups : []);
+
+  if (Array.isArray(data.sites)) {
+    writeJson(STORAGE_KEYS.sites, data.sites);
+  }
 }
 
 export function isStorageAvailable() {

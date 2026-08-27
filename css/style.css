@@ -49,8 +49,18 @@ button:disabled {
 }
 
 .app-header {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   padding: 26px clamp(18px, 4vw, 48px) 18px;
+}
+
+.app-header > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
 .eyebrow {
@@ -655,6 +665,53 @@ textarea:focus {
   padding: 24px;
 }
 
+.site-manager-dialog {
+  width: min(760px, calc(100% - 28px));
+}
+
+.site-add-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.45fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.site-manager-list {
+  display: grid;
+  gap: 16px;
+  max-height: min(54vh, 520px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.site-manager-group {
+  display: grid;
+  gap: 10px;
+}
+
+.site-manager-group h3 {
+  margin-bottom: 0;
+}
+
+.site-manager-group ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-manager-item {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -732,7 +789,13 @@ textarea:focus {
   }
 
   .app-header {
+    display: block;
     padding: 20px 14px 14px;
+  }
+
+  .app-header > div {
+    display: grid;
+    gap: 10px;
   }
 
   h1 {
@@ -748,6 +811,11 @@ textarea:focus {
 
   .panel {
     padding: 18px;
+  }
+
+  .site-add-row,
+  .site-manager-item {
+    grid-template-columns: 1fr;
   }
 
   .application-panel {

@@ -10,7 +10,9 @@ import {
   getGroups,
   getMembers,
   getRecentMembers,
+  getSiteGroups,
   isStorageAvailable,
+  saveSiteGroups,
   touchMembers,
   updateMember
 } from "./storage.js";
@@ -40,6 +42,14 @@ const elements = {
   cameraInput: document.querySelector("#cameraInput"),
   noteInput: document.querySelector("#noteInput"),
   purposeList: document.querySelector("#purposeList"),
+  openSiteManagerButton: document.querySelector("#openSiteManagerButton"),
+  siteManagerDialog: document.querySelector("#siteManagerDialog"),
+  siteAddGroupSelect: document.querySelector("#siteAddGroupSelect"),
+  siteAddNameInput: document.querySelector("#siteAddNameInput"),
+  addSiteButton: document.querySelector("#addSiteButton"),
+  siteManagerList: document.querySelector("#siteManagerList"),
+  closeSiteManagerButton: document.querySelector("#closeSiteManagerButton"),
+  doneSiteManagerButton: document.querySelector("#doneSiteManagerButton"),
   templateHelpText: document.querySelector("#templateHelpText"),
   templateStatus: document.querySelector("#templateStatus"),
   memberSearchInput: document.querySelector("#memberSearchInput"),
@@ -173,9 +183,15 @@ function renderTemplateState() {
 }
 
 function renderSiteOptions() {
+  const selectedSite = elements.siteSelect.value;
+  const siteGroups = getSiteGroups(SITE_GROUPS);
+  const availableSites = siteGroups.flatMap((group) => group.sites);
+
   elements.siteSelect.innerHTML = '<option value="">사이트 선택</option>';
 
-  SITE_GROUPS.forEach((group) => {
+  siteGroups.forEach((group) => {
+    if (!group.sites.length) return;
+
     const optgroup = document.createElement("optgroup");
     optgroup.label = group.group;
 
@@ -188,6 +204,83 @@ function renderSiteOptions() {
 
     elements.siteSelect.appendChild(optgroup);
   });
+
+  if (availableSites.includes(selectedSite)) {
+    elements.siteSelect.value = selectedSite;
+  }
+}
+
+function getSiteGroupNames(siteGroups = getSiteGroups(SITE_GROUPS)) {
+  const names = siteGroups.map((group) => group.group).filter(Boolean);
+  return names.length ? names : SITE_GROUPS.map((group) => group.group);
+}
+
+function normalizeSiteName(siteName) {
+  return siteName.trim();
+}
+
+function getSiteDuplicate(siteGroups, siteName, currentGroupIndex = -1, currentSiteIndex = -1) {
+  return siteGroups.some((group, groupIndex) => {
+    return group.sites.some((site, siteIndex) => {
+      const isCurrentSite = groupIndex === currentGroupIndex && siteIndex === currentSiteIndex;
+      return !isCurrentSite && site.toLowerCase() === siteName.toLowerCase();
+    });
+  });
+}
+
+function saveAndRenderSiteGroups(siteGroups) {
+  saveSiteGroups(siteGroups);
+  renderSiteOptions();
+  renderSiteManager();
+  renderPreview();
+}
+
+function renderSiteGroupSelect() {
+  const siteGroups = getSiteGroups(SITE_GROUPS);
+  const selectedGroup = elements.siteAddGroupSelect.value;
+
+  elements.siteAddGroupSelect.innerHTML = getSiteGroupNames(siteGroups)
+    .map((groupName) => {
+      const selected = groupName === selectedGroup ? "selected" : "";
+      return `<option value="${escapeHtml(groupName)}" ${selected}>${escapeHtml(groupName)}</option>`;
+    })
+    .join("");
+}
+
+function renderSiteManager() {
+  const siteGroups = getSiteGroups(SITE_GROUPS);
+
+  renderSiteGroupSelect();
+
+  if (!siteGroups.some((group) => group.sites.length)) {
+    elements.siteManagerList.innerHTML = '<p class="empty-text">등록된 출입 사이트가 없습니다.</p>';
+    return;
+  }
+
+  elements.siteManagerList.innerHTML = siteGroups
+    .map((group, groupIndex) => {
+      const siteItems = group.sites.length
+        ? group.sites
+            .map((site, siteIndex) => {
+              return `
+                <li class="site-manager-item">
+                  <input type="text" value="${escapeHtml(site)}" data-site-name-input="${groupIndex}:${siteIndex}" aria-label="${escapeHtml(site)} 사이트명" />
+                  <button type="button" class="secondary-button compact" data-site-action="update" data-site-index="${groupIndex}:${siteIndex}">수정</button>
+                  <button type="button" class="secondary-button compact danger-button" data-site-action="delete" data-site-index="${groupIndex}:${siteIndex}">삭제</button>
+                </li>
+              `;
+            })
+            .join("")
+        : '<li class="empty-text">등록된 사이트가 없습니다.</li>';
+
+      return `
+        <section class="site-manager-group">
+          <h3>${escapeHtml(group.group)}</h3>
+          <ul>${siteItems}</ul>
+        </section>
+      `;
+    })
+    .join("");
 }
 
 function renderPurposeOptions() {
@@ -614,6 +707,91 @@ function copyApplication(applicationId) {
 }
 
 function bindEvents() {
+  elements.openSiteManagerButton.addEventListener("click", () => {
+    renderSiteManager();
+    elements.siteManagerDialog.showModal();
+  });
+  elements.closeSiteManagerButton.addEventListener("click", () => elements.siteManagerDialog.close());
+  elements.doneSiteManagerButton.addEventListener("click", () => elements.siteManagerDialog.close());
+  elements.addSiteButton.addEventListener("click", () => {
+    const siteName = normalizeSiteName(elements.siteAddNameInput.value);
+    const groupName = elements.siteAddGroupSelect.value;
+    const siteGroups = getSiteGroups(SITE_GROUPS);
+
+    if (!siteName) {
+      showMessage("추가할 출입 사이트명을 입력해주세요.", "error");
+      return;
+    }
+
+    if (getSiteDuplicate(siteGroups, siteName)) {
+      showMessage("이미 등록된 출입 사이트입니다.", "error");
+      return;
+    }
+
+    const group = siteGroups.find((savedGroup) => savedGroup.group === groupName);
+    if (group) {
+      group.sites.push(siteName);
+    } else {
+      siteGroups.push({ group: groupName, sites: [siteName] });
+    }
+
+    elements.siteAddNameInput.value = "";
+    saveAndRenderSiteGroups(siteGroups);
+    elements.siteSelect.value = siteName;
+    renderPreview();
+    showMessage(`${siteName} 사이트를 추가했습니다.`, "success");
+  });
+  elements.siteManagerList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-site-action]");
+    if (!button) return;
+
+    const [groupIndex, siteIndex] = button.dataset.siteIndex.split(":").map(Number);
+    const siteGroups = getSiteGroups(SITE_GROUPS);
+    const group = siteGroups[groupIndex];
+    const siteName = group?.sites?.[siteIndex];
+
+    if (!group || !siteName) return;
+
+    if (button.dataset.siteAction === "delete") {
+      const confirmed = window.confirm(`${siteName} 사이트를 삭제하시겠습니까?`);
+      if (!confirmed) return;
+
+      group.sites.splice(siteIndex, 1);
+
+      if (elements.siteSelect.value === siteName) {
+        elements.siteSelect.value = "";
+      }
+
+      saveAndRenderSiteGroups(siteGroups);
+      showMessage(`${siteName} 사이트를 삭제했습니다.`, "success");
+      return;
+    }
+
+    const input = elements.siteManagerList.querySelector(
+      `[data-site-name-input="${groupIndex}:${siteIndex}"]`
+    );
+    const nextSiteName = normalizeSiteName(input?.value || "");
+
+    if (!nextSiteName) {
+      showMessage("수정할 출입 사이트명을 입력해주세요.", "error");
+      return;
+    }
+
+    if (getSiteDuplicate(siteGroups, nextSiteName, groupIndex, siteIndex)) {
+      showMessage("이미 등록된 출입 사이트입니다.", "error");
+      return;
+    }
+
+    group.sites[siteIndex] = nextSiteName;
+
+    if (elements.siteSelect.value === siteName) {
+      elements.siteSelect.value = nextSiteName;
+    }
+
+    saveAndRenderSiteGroups(siteGroups);
+    showMessage(`${siteName} 사이트를 ${nextSiteName}(으)로 수정했습니다.`, "success");
+  });
+
   elements.startDateInput.addEventListener("change", async () => {
     syncEndDate();
     await loadCurrentTemplate();
