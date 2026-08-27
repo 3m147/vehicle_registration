@@ -671,7 +671,7 @@ textarea:focus {
 
 .site-add-row {
   display: grid;
-  grid-template-columns: minmax(120px, 0.45fr) minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(110px, 0.35fr) minmax(150px, 0.75fr) minmax(150px, 0.9fr) auto;
   align-items: end;
   gap: 12px;
   padding: 14px;
@@ -713,7 +713,7 @@ textarea:focus {
 
 .site-manager-item {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) auto auto;
+  grid-template-columns: minmax(120px, 0.75fr) minmax(140px, 1fr) auto auto;
   gap: 8px;
   align-items: center;
 }

@@ -209,15 +209,19 @@
             <select id="siteAddGroupSelect"></select>
           </label>
           <label>
-            새 사이트
-            <input type="text" id="siteAddNameInput" placeholder="예: GOY1" autocomplete="off" />
+            영어이름
+            <input type="text" id="siteAddCodeInput" placeholder="예: ANS4" autocomplete="off" />
+          </label>
+          <label>
+            한글이름
+            <input type="text" id="siteAddNameInput" placeholder="예: 안성4" autocomplete="off" />
           </label>
           <button type="button" class="primary-button" id="addSiteButton">추가</button>
         </div>
 
         <div class="site-sort-row" aria-label="출입 사이트 정렬">
           <button type="button" class="secondary-button" id="sortSitesEnglishButton">영어순 정렬</button>
-          <button type="button" class="secondary-button" id="sortSitesKoreanButton">괄호 한글순 정렬</button>
+          <button type="button" class="secondary-button" id="sortSitesKoreanButton">한글순 정렬</button>
         </div>
 
         <div id="siteManagerList" class="site-manager-list"></div>

@@ -177,9 +177,23 @@ function cloneSiteGroups(siteGroups) {
   return siteGroups.map((group) => {
     return {
       group: group.group,
-      sites: Array.isArray(group.sites) ? [...group.sites] : []
+      sites: Array.isArray(group.sites) ? group.sites.map(normalizeSiteItem).filter((site) => site.code) : []
     };
   });
+}
+
+function normalizeSiteItem(site) {
+  if (typeof site === "string") {
+    return {
+      code: site,
+      name: ""
+    };
+  }
+
+  return {
+    code: String(site?.code || site?.english || "").trim(),
+    name: String(site?.name || site?.korean || "").trim()
+  };
 }
 
 export function getSiteGroups(defaultSiteGroups = []) {
@@ -194,7 +208,7 @@ export function getSiteGroups(defaultSiteGroups = []) {
     .map((group) => {
       return {
         group: group.group,
-        sites: Array.isArray(group.sites) ? group.sites.filter(Boolean) : []
+        sites: Array.isArray(group.sites) ? group.sites.map(normalizeSiteItem).filter((site) => site.code) : []
       };
     });
 }
