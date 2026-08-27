@@ -680,6 +680,12 @@ textarea:focus {
   background: #f8fafc;
 }
 
+.site-sort-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .site-manager-list {
   display: grid;
   gap: 16px;
@@ -816,6 +822,10 @@ textarea:focus {
   .site-add-row,
   .site-manager-item {
     grid-template-columns: 1fr;
+  }
+
+  .site-sort-row {
+    display: grid;
   }
 
   .application-panel {

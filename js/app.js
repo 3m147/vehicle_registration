@@ -47,6 +47,8 @@ const elements = {
   siteAddGroupSelect: document.querySelector("#siteAddGroupSelect"),
   siteAddNameInput: document.querySelector("#siteAddNameInput"),
   addSiteButton: document.querySelector("#addSiteButton"),
+  sortSitesEnglishButton: document.querySelector("#sortSitesEnglishButton"),
+  sortSitesKoreanButton: document.querySelector("#sortSitesKoreanButton"),
   siteManagerList: document.querySelector("#siteManagerList"),
   closeSiteManagerButton: document.querySelector("#closeSiteManagerButton"),
   doneSiteManagerButton: document.querySelector("#doneSiteManagerButton"),
@@ -217,6 +219,43 @@ function getSiteGroupNames(siteGroups = getSiteGroups(SITE_GROUPS)) {
 
 function normalizeSiteName(siteName) {
   return siteName.trim();
+}
+
+const englishSiteSorter = new Intl.Collator("en-US", {
+  numeric: true,
+  sensitivity: "base"
+});
+
+const koreanSiteSorter = new Intl.Collator("ko-KR", {
+  numeric: true,
+  sensitivity: "base"
+});
+
+function getParenthesizedSiteText(siteName) {
+  const matches = [...siteName.matchAll(/[\(（]([^\)）]+)[\)）]/g)];
+  const lastMatch = matches.at(-1);
+
+  return lastMatch ? lastMatch[1].trim() : "";
+}
+
+function sortSiteGroups(siteGroups, mode) {
+  return siteGroups.map((group) => {
+    const sites = [...group.sites].sort((firstSite, secondSite) => {
+      if (mode === "korean") {
+        const firstKoreanName = getParenthesizedSiteText(firstSite);
+        const secondKoreanName = getParenthesizedSiteText(secondSite);
+        const koreanCompare = koreanSiteSorter.compare(firstKoreanName || firstSite, secondKoreanName || secondSite);
+
+        if (koreanCompare !== 0) {
+          return koreanCompare;
+        }
+      }
+
+      return englishSiteSorter.compare(firstSite, secondSite);
+    });
+
+    return { ...group, sites };
+  });
 }
 
 function getSiteDuplicate(siteGroups, siteName, currentGroupIndex = -1, currentSiteIndex = -1) {
@@ -740,6 +779,14 @@ function bindEvents() {
     elements.siteSelect.value = siteName;
     renderPreview();
     showMessage(`${siteName} 사이트를 추가했습니다.`, "success");
+  });
+  elements.sortSitesEnglishButton.addEventListener("click", () => {
+    saveAndRenderSiteGroups(sortSiteGroups(getSiteGroups(SITE_GROUPS), "english"));
+    showMessage("출입 사이트를 영어순으로 정렬했습니다.", "success");
+  });
+  elements.sortSitesKoreanButton.addEventListener("click", () => {
+    saveAndRenderSiteGroups(sortSiteGroups(getSiteGroups(SITE_GROUPS), "korean"));
+    showMessage("출입 사이트를 괄호 안 한글순으로 정렬했습니다.", "success");
   });
   elements.siteManagerList.addEventListener("click", (event) => {
     const button = event.target.closest("[data-site-action]");
