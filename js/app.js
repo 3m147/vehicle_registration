@@ -3,6 +3,7 @@ import {
   addApplication,
   addGroup,
   addMember,
+  createId,
   deleteGroup,
   deleteMember,
   deleteMembersByCompany,
@@ -13,11 +14,19 @@ import {
   getSiteGroups,
   isStorageAvailable,
   saveSiteGroups,
+  saveMembers,
   touchMembers,
   updateMember
 } from "./storage.js";
 import { formatPhoneForDisplay, maskPhone, maskVehicle, normalizePhone, searchMembers, toggleFavorite } from "./members.js";
 import { buildExcelFileName, createExcelFromTemplate } from "./excel.js";
+import {
+  createMemberExcelDataBlob,
+  createMemberExcelTemplateBlob,
+  createMemberTextData,
+  createMemberTextTemplate,
+  parseMemberDataFile
+} from "./memberDataFiles.js";
 import { getTemplateByVisitDates } from "./templates.js";
 
 const state = {
@@ -56,6 +65,12 @@ const elements = {
   templateHelpText: document.querySelector("#templateHelpText"),
   templateStatus: document.querySelector("#templateStatus"),
   memberSearchInput: document.querySelector("#memberSearchInput"),
+  downloadMemberExcelTemplateButton: document.querySelector("#downloadMemberExcelTemplateButton"),
+  downloadMemberTextTemplateButton: document.querySelector("#downloadMemberTextTemplateButton"),
+  exportMemberExcelButton: document.querySelector("#exportMemberExcelButton"),
+  exportMemberTextButton: document.querySelector("#exportMemberTextButton"),
+  importMemberFileButton: document.querySelector("#importMemberFileButton"),
+  memberFileInput: document.querySelector("#memberFileInput"),
   memberList: document.querySelector("#memberList"),
   recentMembers: document.querySelector("#recentMembers"),
   memberGroups: document.querySelector("#memberGroups"),
@@ -675,6 +690,75 @@ function saveMemberFromForm() {
   renderAll();
 }
 
+function ensureCompanyGroups(members) {
+  const savedGroupNames = new Set(getGroups().map((group) => group.name));
+
+  members.forEach((member) => {
+    if (!member.company || savedGroupNames.has(member.company)) return;
+
+    addGroup(member.company);
+    savedGroupNames.add(member.company);
+  });
+}
+
+function createMemberKey(member) {
+  if (member.phone) {
+    return `${member.name}|${member.phone}`;
+  }
+
+  return `${member.company}|${member.name}|${member.vehicle}`;
+}
+
+function mergeImportedMembers(importedMembers) {
+  const validMembers = importedMembers
+    .map((member) => {
+      return {
+        company: member.company.trim(),
+        name: member.name.trim(),
+        phone: normalizePhone(member.phone.trim()),
+        vehicle: member.vehicle.trim()
+      };
+    })
+    .filter((member) => member.name);
+
+  ensureCompanyGroups(validMembers);
+
+  const nextMembers = getMembers();
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  validMembers.forEach((member) => {
+    const memberKey = createMemberKey(member);
+    const existingIndex = nextMembers.findIndex((savedMember) => createMemberKey(savedMember) === memberKey);
+
+    if (existingIndex >= 0) {
+      nextMembers[existingIndex] = {
+        ...nextMembers[existingIndex],
+        ...member
+      };
+      updatedCount += 1;
+      return;
+    }
+
+    nextMembers.unshift({
+      id: createId("member"),
+      favorite: false,
+      lastUsedAt: "",
+      camera: "X",
+      ...member
+    });
+    addedCount += 1;
+  });
+
+  saveMembers(nextMembers);
+
+  return {
+    addedCount,
+    updatedCount,
+    skippedCount: importedMembers.length - validMembers.length
+  };
+}
+
 async function generateExcel() {
   clearMessage();
   elements.generateExcelButton.disabled = true;
@@ -875,6 +959,53 @@ function bindEvents() {
   });
 
   elements.memberSearchInput.addEventListener("input", renderMemberList);
+  elements.downloadMemberExcelTemplateButton.addEventListener("click", async () => {
+    try {
+      const blob = await createMemberExcelTemplateBlob();
+      downloadBlob(blob, "출입자_등록_양식.xlsx");
+    } catch (error) {
+      showMessage(error.message || "Excel 양식을 만들지 못했습니다.", "error");
+    }
+  });
+  elements.downloadMemberTextTemplateButton.addEventListener("click", () => {
+    const blob = new Blob([createMemberTextTemplate()], { type: "text/plain;charset=utf-8" });
+    downloadBlob(blob, "출입자_등록_양식.txt");
+  });
+  elements.exportMemberExcelButton.addEventListener("click", async () => {
+    try {
+      const blob = await createMemberExcelDataBlob(getMembers());
+      downloadBlob(blob, "출입자_데이터.xlsx");
+    } catch (error) {
+      showMessage(error.message || "출입자 Excel 파일을 저장하지 못했습니다.", "error");
+    }
+  });
+  elements.exportMemberTextButton.addEventListener("click", () => {
+    const blob = new Blob([createMemberTextData(getMembers())], { type: "text/plain;charset=utf-8" });
+    downloadBlob(blob, "출입자_데이터.txt");
+  });
+  elements.importMemberFileButton.addEventListener("click", () => {
+    elements.memberFileInput.click();
+  });
+  elements.memberFileInput.addEventListener("change", async () => {
+    const file = elements.memberFileInput.files?.[0];
+    if (!file) return;
+
+    try {
+      const importedMembers = await parseMemberDataFile(file);
+      const result = mergeImportedMembers(importedMembers);
+
+      state.members = getMembers();
+      showMessage(
+        `출입자 파일 등록 완료: ${result.addedCount}명 추가, ${result.updatedCount}명 수정, ${result.skippedCount}행 제외`,
+        "success"
+      );
+      renderAll();
+    } catch (error) {
+      showMessage(error.message || "출입자 파일을 가져오지 못했습니다.", "error");
+    } finally {
+      elements.memberFileInput.value = "";
+    }
+  });
 
   elements.memberList.addEventListener("click", (event) => {
     const card = event.target.closest(".member-card");

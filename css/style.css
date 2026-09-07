@@ -396,6 +396,16 @@ textarea:focus {
   margin-bottom: 20px;
 }
 
+.member-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.member-file-actions input[type="file"] {
+  display: none;
+}
+
 .chip-list {
   display: flex;
   flex-wrap: wrap;
@@ -825,6 +835,10 @@ textarea:focus {
   }
 
   .site-sort-row {
+    display: grid;
+  }
+
+  .member-file-actions {
     display: grid;
   }
 

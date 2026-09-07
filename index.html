@@ -105,6 +105,18 @@
           <input type="search" id="memberSearchInput" placeholder="이름, 소속, 전화번호 검색" />
         </label>
 
+        <div class="quick-section member-file-section">
+          <h3>출입자 파일 등록</h3>
+          <div class="member-file-actions">
+            <button type="button" class="secondary-button compact" id="downloadMemberExcelTemplateButton">Excel 양식</button>
+            <button type="button" class="secondary-button compact" id="downloadMemberTextTemplateButton">메모장 양식</button>
+            <button type="button" class="secondary-button compact" id="exportMemberExcelButton">Excel 저장</button>
+            <button type="button" class="secondary-button compact" id="exportMemberTextButton">메모장 저장</button>
+            <button type="button" class="primary-button compact" id="importMemberFileButton">파일 가져오기</button>
+            <input type="file" id="memberFileInput" accept=".xlsx,.txt,.csv,.tsv" />
+          </div>
+        </div>
+
         <div class="quick-section">
           <h3>최근 출입자</h3>
           <div id="recentMembers" class="chip-list"></div>
