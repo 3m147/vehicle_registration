@@ -396,6 +396,48 @@ textarea:focus {
   margin-bottom: 20px;
 }
 
+.paste-section {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.paste-section summary {
+  min-height: 44px;
+  color: var(--primary);
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.paste-guide {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 12px;
+  color: var(--muted);
+}
+
+.paste-guide strong {
+  color: var(--text);
+}
+
+.paste-guide p {
+  margin-bottom: 0;
+}
+
+.paste-guide code {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 10px;
+  border-radius: 8px;
+  background: #eef2f7;
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.paste-actions,
 .member-file-actions {
   display: flex;
   flex-wrap: wrap;
@@ -404,6 +446,47 @@ textarea:focus {
 
 .member-file-actions input[type="file"] {
   display: none;
+}
+
+.paste-result {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.paste-result-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.paste-result-list {
+  display: grid;
+  gap: 10px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.paste-member-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.paste-member-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.paste-error {
+  color: var(--danger);
+  font-weight: 800;
 }
 
 .chip-list {
@@ -839,8 +922,12 @@ textarea:focus {
     display: grid;
   }
 
-  .member-file-actions {
+  .paste-actions,
+  .member-file-actions,
+  .paste-result-title,
+  .paste-member-fields {
     display: grid;
+    grid-template-columns: 1fr;
   }
 
   .application-panel {

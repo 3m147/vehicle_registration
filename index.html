@@ -105,6 +105,22 @@
           <input type="search" id="memberSearchInput" placeholder="이름, 소속, 전화번호 검색" />
         </label>
 
+        <details class="quick-section paste-section" open>
+          <summary>모바일 명단 붙여넣기</summary>
+          <div class="paste-guide">
+            <strong>한 줄에 한 명씩 입력</strong>
+            <p>소속/회사명 이름 연락처 차량번호 순서가 가장 정확합니다.</p>
+            <code>한성엔지니어링 홍길동 01012345678 12가3456</code>
+            <code>한성엔지니어링 김철수 010-2222-3333 차량없음</code>
+          </div>
+          <textarea id="pasteMembersInput" rows="6" placeholder="카톡이나 문자로 받은 명단을 여기에 붙여넣으세요."></textarea>
+          <div class="paste-actions">
+            <button type="button" class="secondary-button compact" id="clearPasteMembersButton">비우기</button>
+            <button type="button" class="primary-button compact" id="parsePasteMembersButton">분석하기</button>
+          </div>
+          <div id="pasteMembersResult" class="paste-result"></div>
+        </details>
+
         <div class="quick-section member-file-section">
           <h3>출입자 파일 등록</h3>
           <div class="member-file-actions">

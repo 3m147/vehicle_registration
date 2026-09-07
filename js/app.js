@@ -34,7 +34,8 @@ const state = {
   templateArrayBuffer: null,
   loadedTemplateId: "",
   editingMemberId: null,
-  deletingGroupId: ""
+  deletingGroupId: "",
+  pastedMembers: []
 };
 
 const elements = {
@@ -63,6 +64,10 @@ const elements = {
   templateHelpText: document.querySelector("#templateHelpText"),
   templateStatus: document.querySelector("#templateStatus"),
   memberSearchInput: document.querySelector("#memberSearchInput"),
+  pasteMembersInput: document.querySelector("#pasteMembersInput"),
+  clearPasteMembersButton: document.querySelector("#clearPasteMembersButton"),
+  parsePasteMembersButton: document.querySelector("#parsePasteMembersButton"),
+  pasteMembersResult: document.querySelector("#pasteMembersResult"),
   downloadMemberExcelTemplateButton: document.querySelector("#downloadMemberExcelTemplateButton"),
   exportMemberExcelButton: document.querySelector("#exportMemberExcelButton"),
   importMemberFileButton: document.querySelector("#importMemberFileButton"),
@@ -536,6 +541,133 @@ function renderSelectedMembers() {
     .join("");
 }
 
+function normalizeLoosePhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+
+  if (digits.length === 11 && digits.startsWith("010")) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  }
+
+  return String(value || "").trim();
+}
+
+function getKnownCompanyNames() {
+  return getGroups()
+    .map((group) => group.name)
+    .filter(Boolean)
+    .sort((first, second) => second.length - first.length);
+}
+
+function parseMemberLine(line, lineNumber) {
+  const originalText = line.trim();
+  let remainingText = originalText;
+  const errors = [];
+  const phoneMatch = remainingText.match(/010[-\s]?\d{4}[-\s]?\d{4}/);
+  const phone = phoneMatch ? normalizeLoosePhone(phoneMatch[0]) : "";
+
+  if (phoneMatch) {
+    remainingText = remainingText.replace(phoneMatch[0], " ");
+  }
+
+  const vehicleMatch = remainingText.match(/(?:[가-힣]{2})?\d{2,3}[가-힣]\d{4}|차량\s*없음|차량없음|없음/i);
+  const vehicle = vehicleMatch ? vehicleMatch[0].replace(/\s+/g, "") : "";
+
+  if (vehicleMatch) {
+    remainingText = remainingText.replace(vehicleMatch[0], " ");
+  }
+
+  remainingText = remainingText.replace(/[,:/|]+/g, " ").replace(/\s+/g, " ").trim();
+
+  const knownCompany = getKnownCompanyNames().find((company) => remainingText.includes(company));
+  let company = knownCompany || state.selectedCompanyFilter || "";
+
+  if (knownCompany) {
+    remainingText = remainingText.replace(knownCompany, " ").replace(/\s+/g, " ").trim();
+  }
+
+  const parts = remainingText.split(" ").filter(Boolean);
+
+  if (!company && parts.length > 1) {
+    company = parts.shift();
+  }
+
+  const name = parts[0] || "";
+
+  if (!company) errors.push("소속/회사명 확인 필요");
+  if (!name) errors.push("이름 확인 필요");
+  if (!phone) errors.push("연락처 확인 필요");
+
+  return {
+    lineNumber,
+    checked: !errors.length,
+    company,
+    name,
+    phone,
+    vehicle: vehicle === "없음" || vehicle === "차량없음" ? "" : vehicle,
+    errors
+  };
+}
+
+function parsePastedMembers(text) {
+  return text
+    .split(/\r?\n/)
+    .map((line, index) => ({ line, lineNumber: index + 1 }))
+    .filter((item) => item.line.trim())
+    .map((item) => parseMemberLine(item.line, item.lineNumber));
+}
+
+function renderPasteMembersResult() {
+  if (!state.pastedMembers.length) {
+    elements.pasteMembersResult.innerHTML = "";
+    return;
+  }
+
+  const validCount = state.pastedMembers.filter((member) => member.checked && member.company && member.name).length;
+
+  elements.pasteMembersResult.innerHTML = `
+    <div class="paste-result-title">
+      <strong>분석 결과 ${state.pastedMembers.length}명</strong>
+      <button type="button" class="primary-button compact" id="savePastedMembersButton">선택한 인원 등록</button>
+    </div>
+    <p class="helper-text">체크된 항목만 등록됩니다. 틀린 칸은 바로 수정할 수 있습니다.</p>
+    <div class="paste-result-list">
+      ${state.pastedMembers
+        .map((member, index) => {
+          const errorText = member.errors.length ? `<small class="paste-error">${escapeHtml(member.errors.join(", "))}</small>` : "";
+
+          return `
+            <article class="paste-member-card">
+              <label class="checkbox-label">
+                <input type="checkbox" data-paste-check="${index}" ${member.checked ? "checked" : ""} />
+                ${member.lineNumber}행 등록
+              </label>
+              <div class="paste-member-fields">
+                <input type="text" value="${escapeHtml(member.company)}" data-paste-field="company" data-paste-index="${index}" aria-label="${member.lineNumber}행 소속/회사명" placeholder="소속/회사명" />
+                <input type="text" value="${escapeHtml(member.name)}" data-paste-field="name" data-paste-index="${index}" aria-label="${member.lineNumber}행 이름" placeholder="이름" />
+                <input type="tel" value="${escapeHtml(member.phone)}" data-paste-field="phone" data-paste-index="${index}" aria-label="${member.lineNumber}행 연락처" placeholder="010-1234-5678" />
+                <input type="text" value="${escapeHtml(member.vehicle)}" data-paste-field="vehicle" data-paste-index="${index}" aria-label="${member.lineNumber}행 차량번호" placeholder="차량번호" />
+              </div>
+              ${errorText}
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+    <p class="helper-text">${validCount}명이 바로 등록 가능한 상태입니다.</p>
+  `;
+}
+
+function refreshPastedMemberValidity(index) {
+  const member = state.pastedMembers[index];
+  if (!member) return;
+
+  member.errors = [];
+  if (!member.company.trim()) member.errors.push("소속/회사명 확인 필요");
+  if (!member.name.trim()) member.errors.push("이름 확인 필요");
+  if (!member.phone.trim()) member.errors.push("연락처 확인 필요");
+  member.checked = !member.errors.length;
+}
+
 function renderPreview() {
   const application = getApplicationFormData();
   const selectedMembers = getSelectedMembers();
@@ -971,6 +1103,86 @@ function bindEvents() {
   });
 
   elements.memberSearchInput.addEventListener("input", renderMemberList);
+  elements.clearPasteMembersButton.addEventListener("click", () => {
+    elements.pasteMembersInput.value = "";
+    state.pastedMembers = [];
+    renderPasteMembersResult();
+  });
+  elements.parsePasteMembersButton.addEventListener("click", () => {
+    state.pastedMembers = parsePastedMembers(elements.pasteMembersInput.value);
+
+    if (!state.pastedMembers.length) {
+      showMessage("붙여넣은 명단이 없습니다.", "error");
+      renderPasteMembersResult();
+      return;
+    }
+
+    renderPasteMembersResult();
+    showMessage("명단을 분석했습니다. 내용을 확인한 뒤 등록하세요.", "info");
+  });
+  elements.pasteMembersResult.addEventListener("input", (event) => {
+    const input = event.target.closest("[data-paste-field]");
+    if (!input) return;
+
+    const index = Number(input.dataset.pasteIndex);
+    const field = input.dataset.pasteField;
+    const member = state.pastedMembers[index];
+    if (!member) return;
+
+    member[field] = field === "phone" ? normalizeLoosePhone(input.value) : input.value.trim();
+    refreshPastedMemberValidity(index);
+  });
+  elements.pasteMembersResult.addEventListener("focusout", (event) => {
+    if (event.target.closest("[data-paste-field]")) {
+      renderPasteMembersResult();
+    }
+  });
+  elements.pasteMembersResult.addEventListener("change", (event) => {
+    const checkbox = event.target.closest("[data-paste-check]");
+    if (!checkbox) return;
+
+    const member = state.pastedMembers[Number(checkbox.dataset.pasteCheck)];
+    if (member) {
+      member.checked = checkbox.checked;
+    }
+  });
+  elements.pasteMembersResult.addEventListener("click", (event) => {
+    const saveButton = event.target.closest("#savePastedMembersButton");
+    if (!saveButton) return;
+
+    const selectedMembers = state.pastedMembers
+      .filter((member) => member.checked)
+      .map((member) => {
+        return {
+          company: member.company.trim(),
+          name: member.name.trim(),
+          phone: normalizePhone(member.phone.trim()),
+          vehicle: member.vehicle.trim()
+        };
+      });
+
+    const invalidMembers = selectedMembers.filter((member) => {
+      return !member.company || !member.name || !/^010-\d{4}-\d{4}$/.test(member.phone);
+    });
+
+    if (!selectedMembers.length) {
+      showMessage("등록할 인원을 선택해주세요.", "error");
+      return;
+    }
+
+    if (invalidMembers.length) {
+      showMessage("선택한 인원 중 소속/회사명, 이름이 비어 있거나 연락처 형식이 잘못된 항목이 있습니다.", "error");
+      return;
+    }
+
+    const result = mergeImportedMembers(selectedMembers);
+    state.members = getMembers();
+    state.pastedMembers = [];
+    elements.pasteMembersInput.value = "";
+    renderPasteMembersResult();
+    showMessage(`붙여넣기 등록 완료: ${result.addedCount}명 추가, ${result.updatedCount}명 수정`, "success");
+    renderAll();
+  });
   elements.downloadMemberExcelTemplateButton.addEventListener("click", async () => {
     try {
       const blob = await createMemberExcelTemplateBlob();
