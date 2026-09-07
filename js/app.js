@@ -23,8 +23,6 @@ import { buildExcelFileName, createExcelFromTemplate } from "./excel.js";
 import {
   createMemberExcelDataBlob,
   createMemberExcelTemplateBlob,
-  createMemberTextData,
-  createMemberTextTemplate,
   parseMemberDataFile
 } from "./memberDataFiles.js";
 import { getTemplateByVisitDates } from "./templates.js";
@@ -66,9 +64,7 @@ const elements = {
   templateStatus: document.querySelector("#templateStatus"),
   memberSearchInput: document.querySelector("#memberSearchInput"),
   downloadMemberExcelTemplateButton: document.querySelector("#downloadMemberExcelTemplateButton"),
-  downloadMemberTextTemplateButton: document.querySelector("#downloadMemberTextTemplateButton"),
   exportMemberExcelButton: document.querySelector("#exportMemberExcelButton"),
-  exportMemberTextButton: document.querySelector("#exportMemberTextButton"),
   importMemberFileButton: document.querySelector("#importMemberFileButton"),
   memberFileInput: document.querySelector("#memberFileInput"),
   memberList: document.querySelector("#memberList"),
@@ -759,6 +755,22 @@ function mergeImportedMembers(importedMembers) {
   };
 }
 
+function formatImportResultMessage(result, importErrors = []) {
+  const summary = `출입자 Excel 등록 완료: ${result.addedCount}명 추가, ${result.updatedCount}명 수정, ${result.skippedCount + importErrors.length}행 제외`;
+
+  if (!importErrors.length) {
+    return summary;
+  }
+
+  const details = importErrors
+    .slice(0, 8)
+    .map((error) => `${error.rowNumber}행: ${error.message}`)
+    .join("\n");
+  const moreText = importErrors.length > 8 ? `\n외 ${importErrors.length - 8}건 더 있음` : "";
+
+  return `${summary}\n\n확인 필요:\n${details}${moreText}`;
+}
+
 async function generateExcel() {
   clearMessage();
   elements.generateExcelButton.disabled = true;
@@ -967,10 +979,6 @@ function bindEvents() {
       showMessage(error.message || "Excel 양식을 만들지 못했습니다.", "error");
     }
   });
-  elements.downloadMemberTextTemplateButton.addEventListener("click", () => {
-    const blob = new Blob([createMemberTextTemplate()], { type: "text/plain;charset=utf-8" });
-    downloadBlob(blob, "출입자_등록_양식.txt");
-  });
   elements.exportMemberExcelButton.addEventListener("click", async () => {
     try {
       const blob = await createMemberExcelDataBlob(getMembers());
@@ -978,10 +986,6 @@ function bindEvents() {
     } catch (error) {
       showMessage(error.message || "출입자 Excel 파일을 저장하지 못했습니다.", "error");
     }
-  });
-  elements.exportMemberTextButton.addEventListener("click", () => {
-    const blob = new Blob([createMemberTextData(getMembers())], { type: "text/plain;charset=utf-8" });
-    downloadBlob(blob, "출입자_데이터.txt");
   });
   elements.importMemberFileButton.addEventListener("click", () => {
     elements.memberFileInput.click();
@@ -991,14 +995,11 @@ function bindEvents() {
     if (!file) return;
 
     try {
-      const importedMembers = await parseMemberDataFile(file);
-      const result = mergeImportedMembers(importedMembers);
+      const importData = await parseMemberDataFile(file);
+      const result = mergeImportedMembers(importData.members);
 
       state.members = getMembers();
-      showMessage(
-        `출입자 파일 등록 완료: ${result.addedCount}명 추가, ${result.updatedCount}명 수정, ${result.skippedCount}행 제외`,
-        "success"
-      );
+      showMessage(formatImportResultMessage(result, importData.errors), importData.errors.length ? "error" : "success");
       renderAll();
     } catch (error) {
       showMessage(error.message || "출입자 파일을 가져오지 못했습니다.", "error");

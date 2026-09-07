@@ -544,6 +544,7 @@ textarea:focus {
   padding: 14px;
   border-radius: 8px;
   font-weight: 700;
+  white-space: pre-line;
 }
 
 .message-box.error,

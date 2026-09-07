@@ -1,4 +1,5 @@
 const MEMBER_HEADERS = ["소속/회사명", "이름", "연락처", "차량번호"];
+const REQUIRED_FIELDS = ["company", "name", "phone", "vehicle"];
 
 const HEADER_ALIASES = {
   company: ["소속/회사명", "소속", "회사명", "회사", "company"],
@@ -23,31 +24,15 @@ function createHeaderMap(headers) {
   );
 }
 
+function getMissingRequiredHeaders(headerMap) {
+  return REQUIRED_FIELDS.filter((fieldName) => headerMap[fieldName] < 0);
+}
+
 function getCellText(value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "object" && "text" in value) return String(value.text || "").trim();
   if (typeof value === "object" && "result" in value) return String(value.result || "").trim();
   return String(value).trim();
-}
-
-function parseDelimitedLine(line, delimiter) {
-  const values = [];
-  let current = "";
-  let quoted = false;
-
-  for (const char of line) {
-    if (char === '"') {
-      quoted = !quoted;
-    } else if (char === delimiter && !quoted) {
-      values.push(current.trim());
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-
-  values.push(current.trim());
-  return values.map((value) => value.replace(/^"|"$/g, "").replaceAll('""', '"'));
 }
 
 function normalizeMemberRow(row, headerMap) {
@@ -57,6 +42,24 @@ function normalizeMemberRow(row, headerMap) {
     phone: getCellText(row[headerMap.phone] || ""),
     vehicle: getCellText(row[headerMap.vehicle] || "")
   };
+}
+
+function validateMember(member) {
+  const errors = [];
+
+  if (!member.company) {
+    errors.push("소속/회사명 없음");
+  }
+
+  if (!member.name) {
+    errors.push("이름 없음");
+  }
+
+  if (member.phone && !/^010-?\d{4}-?\d{4}$/.test(member.phone)) {
+    errors.push("연락처 형식 오류");
+  }
+
+  return errors;
 }
 
 export async function createMemberExcelTemplateBlob() {
@@ -94,27 +97,6 @@ export async function createMemberExcelDataBlob(members = []) {
   });
 }
 
-export function createMemberTextTemplate() {
-  return createMemberTextData([]);
-}
-
-function cleanTextCell(value) {
-  return String(value || "").replace(/[\t\r\n]+/g, " ").trim();
-}
-
-export function createMemberTextData(members = []) {
-  const rows = members.map((member) => {
-    return [
-      cleanTextCell(member.company),
-      cleanTextCell(member.name),
-      cleanTextCell(member.phone),
-      cleanTextCell(member.vehicle)
-    ].join("\t");
-  });
-
-  return `${MEMBER_HEADERS.join("\t")}\n${rows.join("\n")}${rows.length ? "\n" : ""}`;
-}
-
 async function parseExcelMembers(file) {
   if (!window.ExcelJS) {
     throw new Error("ExcelJS 라이브러리를 불러오지 못했습니다.");
@@ -130,34 +112,37 @@ async function parseExcelMembers(file) {
 
   const headerRow = worksheet.getRow(1).values.slice(1).map(getCellText);
   const headerMap = createHeaderMap(headerRow);
+  const missingHeaders = getMissingRequiredHeaders(headerMap);
+
+  if (missingHeaders.length) {
+    throw new Error("출입자 Excel 양식의 필수 헤더가 없습니다. Excel 양식을 다시 내려받아 사용해주세요.");
+  }
+
   const members = [];
+  const errors = [];
 
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
 
     const values = row.values.slice(1);
     const member = normalizeMemberRow(values, headerMap);
-    if (Object.values(member).some(Boolean)) {
-      members.push(member);
+    if (!Object.values(member).some(Boolean)) return;
+
+    const rowErrors = validateMember(member);
+    if (rowErrors.length) {
+      errors.push({
+        rowNumber,
+        message: rowErrors.join(", ")
+      });
+    } else {
+      members.push({
+        ...member,
+        rowNumber
+      });
     }
   });
 
-  return members;
-}
-
-async function parseTextMembers(file) {
-  const text = (await file.text()).replace(/^\uFEFF/, "");
-  const lines = text.split(/\r?\n/).filter((line) => line.trim());
-  if (!lines.length) return [];
-
-  const delimiter = lines[0].includes("\t") ? "\t" : ",";
-  const headerRow = parseDelimitedLine(lines[0], delimiter);
-  const headerMap = createHeaderMap(headerRow);
-
-  return lines
-    .slice(1)
-    .map((line) => normalizeMemberRow(parseDelimitedLine(line, delimiter), headerMap))
-    .filter((member) => Object.values(member).some(Boolean));
+  return { members, errors };
 }
 
 export async function parseMemberDataFile(file) {
@@ -167,9 +152,5 @@ export async function parseMemberDataFile(file) {
     return parseExcelMembers(file);
   }
 
-  if (fileName.endsWith(".txt") || fileName.endsWith(".csv") || fileName.endsWith(".tsv")) {
-    return parseTextMembers(file);
-  }
-
-  throw new Error("xlsx, txt, csv, tsv 파일만 가져올 수 있습니다.");
+  throw new Error("Excel xlsx 파일만 가져올 수 있습니다.");
 }
