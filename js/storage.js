@@ -176,10 +176,15 @@ export function deleteGroup(groupId) {
 function cloneSiteGroups(siteGroups) {
   return siteGroups.map((group) => {
     return {
-      group: group.group,
+      group: normalizeSiteGroupName(group.group),
       sites: Array.isArray(group.sites) ? group.sites.map(normalizeSiteItem).filter((site) => site.code) : []
     };
   });
+}
+
+function normalizeSiteGroupName(groupName) {
+  const normalizedName = String(groupName || "").trim();
+  return normalizedName === "FM" ? "FC" : normalizedName;
 }
 
 function normalizeSiteItem(site) {
@@ -207,7 +212,7 @@ export function getSiteGroups(defaultSiteGroups = []) {
     .filter((group) => group && group.group)
     .map((group) => {
       return {
-        group: group.group,
+        group: normalizeSiteGroupName(group.group),
         sites: Array.isArray(group.sites) ? group.sites.map(normalizeSiteItem).filter((site) => site.code) : []
       };
     });

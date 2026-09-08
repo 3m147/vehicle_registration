@@ -2,11 +2,11 @@
  * 사이트 목록 데이터입니다.
  *
  * 사이트를 추가하거나 삭제할 때는 이 파일만 수정하면 됩니다.
- * group 값은 화면에서 FM / OFFICE 그룹으로 묶어 보여주는 데 사용합니다.
+ * group 값은 화면에서 FC / OFFICE 그룹으로 묶어 보여주는 데 사용합니다.
  */
 export const SITE_GROUPS = [
   {
-    group: "FM",
+    group: "FC",
     sites: [
       "GOY1",
       "INC4",
@@ -105,4 +105,3 @@ export const DEFAULT_PURPOSES = [
   "정기 유지보수",
   "장애 대응"
 ];
-
