@@ -35,7 +35,9 @@ const state = {
   loadedTemplateId: "",
   editingMemberId: null,
   deletingGroupId: "",
-  pastedMembers: []
+  pastedMembers: [],
+  useIndividualPurposes: false,
+  memberPurposeById: {}
 };
 
 const elements = {
@@ -77,6 +79,7 @@ const elements = {
   memberGroups: document.querySelector("#memberGroups"),
   selectedMembers: document.querySelector("#selectedMembers"),
   selectedCount: document.querySelector("#selectedCount"),
+  individualPurposeToggle: document.querySelector("#individualPurposeToggle"),
   previewBox: document.querySelector("#previewBox"),
   messageBox: document.querySelector("#messageBox"),
   history: document.querySelector("#applicationHistory"),
@@ -159,6 +162,37 @@ function getSelectedMembers() {
   return state.selectedMemberIds
     .map((memberId) => state.members.find((member) => member.id === memberId))
     .filter(Boolean);
+}
+
+function getMemberVisitPurpose(memberId) {
+  return state.memberPurposeById[memberId] ?? elements.purposeInput.value.trim();
+}
+
+function seedMemberPurpose(memberId) {
+  if (!state.useIndividualPurposes || state.memberPurposeById[memberId] !== undefined) {
+    return;
+  }
+
+  state.memberPurposeById[memberId] = elements.purposeInput.value.trim();
+}
+
+function syncSelectedMemberPurposes() {
+  const selectedIds = new Set(state.selectedMemberIds);
+
+  Object.keys(state.memberPurposeById).forEach((memberId) => {
+    if (!selectedIds.has(memberId)) {
+      delete state.memberPurposeById[memberId];
+    }
+  });
+
+  state.selectedMemberIds.forEach(seedMemberPurpose);
+}
+
+function getSelectedMembersForExcel() {
+  return getSelectedMembers().map((member) => ({
+    ...member,
+    visitPurpose: state.useIndividualPurposes ? getMemberVisitPurpose(member.id).trim() : ""
+  }));
 }
 
 function getCurrentTemplate() {
@@ -365,8 +399,10 @@ function syncEndDate() {
 function toggleSelectedMember(memberId) {
   if (state.selectedMemberIds.includes(memberId)) {
     state.selectedMemberIds = state.selectedMemberIds.filter((id) => id !== memberId);
+    delete state.memberPurposeById[memberId];
   } else {
     state.selectedMemberIds = [...state.selectedMemberIds, memberId];
+    seedMemberPurpose(memberId);
   }
 
   renderAll();
@@ -375,6 +411,7 @@ function toggleSelectedMember(memberId) {
 function addMemberToSelection(memberId) {
   if (!state.selectedMemberIds.includes(memberId)) {
     state.selectedMemberIds = [...state.selectedMemberIds, memberId];
+    seedMemberPurpose(memberId);
   }
 }
 
@@ -522,7 +559,11 @@ function renderCompanyOptions(selectedCompany = "") {
 
 function renderSelectedMembers() {
   const selectedMembers = getSelectedMembers();
+  syncSelectedMemberPurposes();
+
   elements.selectedCount.textContent = `${selectedMembers.length}명`;
+  elements.individualPurposeToggle.checked = state.useIndividualPurposes;
+  elements.individualPurposeToggle.disabled = !selectedMembers.length;
 
   if (!selectedMembers.length) {
     elements.selectedMembers.innerHTML = '<li class="empty-text">선택된 출입자가 없습니다.</li>';
@@ -531,10 +572,22 @@ function renderSelectedMembers() {
 
   elements.selectedMembers.innerHTML = selectedMembers
     .map((member) => {
+      const purposeField = state.useIndividualPurposes
+        ? `
+          <label class="selected-purpose">
+            <span>출입목적</span>
+            <input type="text" value="${escapeHtml(getMemberVisitPurpose(member.id))}" data-purpose-member-id="${escapeHtml(member.id)}" placeholder="예: UPS 정기점검" />
+          </label>
+        `
+        : "";
+
       return `
         <li>
-          <span>${escapeHtml(member.name)}</span>
-          <button type="button" class="text-button danger" data-member-id="${member.id}">제외</button>
+          <div class="selected-member-row">
+            <span>${escapeHtml(member.name)}</span>
+            <button type="button" class="text-button danger" data-member-id="${member.id}">제외</button>
+          </div>
+          ${purposeField}
         </li>
       `;
     })
@@ -671,6 +724,7 @@ function refreshPastedMemberValidity(index) {
 function renderPreview() {
   const application = getApplicationFormData();
   const selectedMembers = getSelectedMembers();
+  const previewMembers = getSelectedMembersForExcel();
   const template = getCurrentTemplate();
   const dateText =
     application.startDate === application.endDate
@@ -689,7 +743,14 @@ function renderPreview() {
     <ol>
       ${
         selectedMembers.length
-          ? selectedMembers.map((member) => `<li>${escapeHtml(member.name)}</li>`).join("")
+          ? previewMembers
+              .map((member) => {
+                const purpose = state.useIndividualPurposes
+                  ? ` <small>${escapeHtml(member.visitPurpose || application.purpose || "-")}</small>`
+                  : "";
+                return `<li>${escapeHtml(member.name)}${purpose}</li>`;
+              })
+              .join("")
           : '<li class="empty-text">출입자를 선택해주세요.</li>'
       }
     </ol>
@@ -911,7 +972,7 @@ async function generateExcel() {
   const application = getApplicationFormData();
   const template = getCurrentTemplate();
   await loadCurrentTemplate();
-  const selectedMembers = getSelectedMembers();
+  const selectedMembers = getSelectedMembersForExcel();
   const errors = validateApplication(application, selectedMembers);
 
   if (errors.length) {
@@ -943,7 +1004,9 @@ async function generateExcel() {
       ...application,
       templateId: template.id,
       templateName: template.name,
-      visitorIds: selectedMembers.map((member) => member.id)
+      visitorIds: selectedMembers.map((member) => member.id),
+      useIndividualPurposes: state.useIndividualPurposes,
+      memberPurposes: state.useIndividualPurposes ? { ...state.memberPurposeById } : {}
     });
 
     showMessage(`${fileName} 파일을 생성했습니다.`, "success");
@@ -974,6 +1037,11 @@ function copyApplication(applicationId) {
   elements.cameraInput.value = application.camera || "O";
   elements.noteInput.value = application.note || "";
   state.selectedMemberIds = application.visitorIds.filter((id) => state.members.some((member) => member.id === id));
+  state.useIndividualPurposes = Boolean(application.useIndividualPurposes);
+  state.memberPurposeById = application.memberPurposes ? { ...application.memberPurposes } : {};
+  if (state.useIndividualPurposes) {
+    state.selectedMemberIds.forEach(seedMemberPurpose);
+  }
   showMessage("최근 신청 정보를 불러왔습니다. 날짜를 확인한 뒤 생성하세요.", "success");
   renderAll();
 }
@@ -1096,6 +1164,15 @@ function bindEvents() {
     elements.cameraInput,
     elements.noteInput
   ].forEach((input) => input.addEventListener("input", renderPreview));
+
+  elements.individualPurposeToggle.addEventListener("change", () => {
+    state.useIndividualPurposes = elements.individualPurposeToggle.checked;
+    if (state.useIndividualPurposes) {
+      state.selectedMemberIds.forEach(seedMemberPurpose);
+    }
+    renderSelectedMembers();
+    renderPreview();
+  });
 
   elements.endDateInput.addEventListener("input", async () => {
     await loadCurrentTemplate();
@@ -1237,6 +1314,7 @@ function bindEvents() {
       if (window.confirm(`${member.name}님의 정보를 삭제하시겠습니까?`)) {
         deleteMember(memberId);
         state.selectedMemberIds = state.selectedMemberIds.filter((id) => id !== memberId);
+        delete state.memberPurposeById[memberId];
         renderAll();
       }
       return;
@@ -1270,7 +1348,15 @@ function bindEvents() {
     const button = event.target.closest("[data-member-id]");
     if (!button) return;
     state.selectedMemberIds = state.selectedMemberIds.filter((id) => id !== button.dataset.memberId);
+    delete state.memberPurposeById[button.dataset.memberId];
     renderAll();
+  });
+
+  elements.selectedMembers.addEventListener("input", (event) => {
+    const input = event.target.closest("[data-purpose-member-id]");
+    if (!input) return;
+    state.memberPurposeById[input.dataset.purposeMemberId] = input.value;
+    renderPreview();
   });
 
   elements.openMemberModalButton.addEventListener("click", () => openMemberDialog());
@@ -1321,6 +1407,9 @@ function bindEvents() {
     const deletedMemberIds = deleteMembersByCompany(group.name);
     deleteGroup(group.id);
     state.selectedMemberIds = state.selectedMemberIds.filter((memberId) => !deletedMemberIds.includes(memberId));
+    deletedMemberIds.forEach((memberId) => {
+      delete state.memberPurposeById[memberId];
+    });
 
     if (state.selectedCompanyFilter === group.name) {
       state.selectedCompanyFilter = "";

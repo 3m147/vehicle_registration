@@ -583,6 +583,16 @@ textarea:focus {
   padding-right: 4px;
 }
 
+.selected-option {
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  font-weight: 800;
+}
+
 .selected-list li,
 .history-item {
   display: flex;
@@ -591,6 +601,34 @@ textarea:focus {
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.selected-list li {
+  display: grid;
+  align-items: stretch;
+}
+
+.selected-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.selected-purpose {
+  display: grid;
+  gap: 6px;
+}
+
+.selected-purpose span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.selected-purpose input {
+  min-height: 44px;
+  padding: 10px 12px;
 }
 
 .preview-box dl {
@@ -612,6 +650,12 @@ textarea:focus {
 
 .preview-box dd {
   margin: 0;
+  font-weight: 700;
+}
+
+.preview-box li small {
+  display: block;
+  color: var(--muted);
   font-weight: 700;
 }
 

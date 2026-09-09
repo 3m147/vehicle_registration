@@ -85,7 +85,8 @@ function fillVisitorsToExcel(worksheet, visitors, application, mapping) {
     }
 
     if (visitorMapping.purposeColumn) {
-      worksheet.getCell(`${visitorMapping.purposeColumn}${row}`).value = application.purpose || "";
+      worksheet.getCell(`${visitorMapping.purposeColumn}${row}`).value =
+        visitor.visitPurpose || application.purpose || "";
     }
   });
 }
