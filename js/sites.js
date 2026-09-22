@@ -4,6 +4,20 @@
  * 사이트를 추가하거나 삭제할 때는 이 파일만 수정하면 됩니다.
  * group 값은 화면에서 FC / OFFICE 그룹으로 묶어 보여주는 데 사용합니다.
  */
+export const SITE_NAME_PREFIXES = {
+  ANS: "안성", BUC: "부천", CHA: "천안", CHW: "창원", DAE: "대구",
+  DAJ: "대전", DON: "동탄", ECH: "이천", GEW: "금왕", GMH: "김해",
+  GON: "곤지암", GOY: "고양", GWJ: "전라 광주", HOB: "호법",
+  INC: "인천", KKW: "경기도 광주", MAJ: "마장", MCN: "목천",
+  PYT: "평택", SAN: "안산", SEL: "서울", SIH: "시흥", YAN: "양지",
+  YAS: "양산", YEO: "여주", YON: "용인"
+};
+
+export function getDefaultSiteName(code) {
+  const prefix = Object.keys(SITE_NAME_PREFIXES).find((item) => code.startsWith(item));
+  return prefix ? `${SITE_NAME_PREFIXES[prefix]}${code.slice(prefix.length)}` : "";
+}
+
 export const SITE_GROUPS = [
   {
     group: "FC",
@@ -69,7 +83,7 @@ export const SITE_GROUPS = [
       "GMH1",
       "GEW2",
       "GEW3"
-    ]
+    ].map((code) => ({ code, name: getDefaultSiteName(code) }))
   },
   {
     group: "OFFICE",

@@ -1,3 +1,5 @@
+import { getDefaultSiteName } from "./sites.js";
+
 const STORAGE_KEYS = {
   members: "access_auto_members",
   applications: "access_auto_applications",
@@ -209,7 +211,7 @@ export function getSiteGroups(defaultSiteGroups = []) {
     return cloneSiteGroups(defaultSiteGroups);
   }
 
-  return savedGroups
+  const normalizedGroups = savedGroups
     .filter((group) => group && group.group)
     .map((group) => {
       return {
@@ -217,6 +219,23 @@ export function getSiteGroups(defaultSiteGroups = []) {
         sites: Array.isArray(group.sites) ? group.sites.map(normalizeSiteItem).filter((site) => site.code) : []
       };
     });
+
+  const migrationKey = "access_auto_site_korean_names_v1";
+  if (!localStorage.getItem(migrationKey)) {
+    const defaultFcCodes = new Set(defaultSiteGroups
+      .filter((group) => normalizeSiteGroupName(group.group) === "FC")
+      .flatMap((group) => group.sites.map((site) => normalizeSiteItem(site).code)));
+    normalizedGroups.forEach((group) => {
+      if (group.group !== "FC") return;
+      group.sites.forEach((site) => {
+        if (!site.name && defaultFcCodes.has(site.code)) site.name = getDefaultSiteName(site.code);
+      });
+    });
+    writeJson(STORAGE_KEYS.sites, normalizedGroups);
+    localStorage.setItem(migrationKey, "done");
+  }
+
+  return normalizedGroups;
 }
 
 export function saveSiteGroups(siteGroups) {
