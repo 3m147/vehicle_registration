@@ -1,9 +1,10 @@
-const MEMBER_HEADERS = ["소속/회사명", "이름", "연락처", "차량번호"];
+const MEMBER_HEADERS = ["소속/회사명", "이름", "영어 이름", "연락처", "차량번호"];
 const REQUIRED_FIELDS = ["company", "name", "phone", "vehicle"];
 
 const HEADER_ALIASES = {
   company: ["소속/회사명", "소속", "회사명", "회사", "company"],
   name: ["이름", "성명", "name"],
+  englishName: ["영어 이름", "영어이름", "영문 이름", "영문이름", "english name"],
   phone: ["연락처", "전화번호", "휴대폰", "핸드폰", "phone"],
   vehicle: ["차량번호", "차량", "vehicle"]
 };
@@ -39,6 +40,7 @@ function normalizeMemberRow(row, headerMap) {
   return {
     company: getCellText(row[headerMap.company] || ""),
     name: getCellText(row[headerMap.name] || ""),
+    englishName: headerMap.englishName >= 0 ? getCellText(row[headerMap.englishName] || "") : "",
     phone: getCellText(row[headerMap.phone] || ""),
     vehicle: getCellText(row[headerMap.vehicle] || "")
   };
@@ -76,12 +78,13 @@ export async function createMemberExcelDataBlob(members = []) {
 
   worksheet.addRow(MEMBER_HEADERS);
   members.forEach((member) => {
-    worksheet.addRow([member.company || "", member.name || "", member.phone || "", member.vehicle || ""]);
+    worksheet.addRow([member.company || "", member.name || "", member.englishName || "", member.phone || "", member.vehicle || ""]);
   });
 
   worksheet.columns = [
     { key: "company", width: 24 },
     { key: "name", width: 18 },
+    { key: "englishName", width: 22 },
     { key: "phone", width: 18 },
     { key: "vehicle", width: 18 }
   ];
@@ -89,7 +92,7 @@ export async function createMemberExcelDataBlob(members = []) {
   worksheet.getRow(1).font = { bold: true };
   worksheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
   worksheet.views = [{ state: "frozen", ySplit: 1 }];
-  worksheet.autoFilter = "A1:D1";
+  worksheet.autoFilter = "A1:E1";
 
   const buffer = await workbook.xlsx.writeBuffer();
   return new Blob([buffer], {

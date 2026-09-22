@@ -69,6 +69,7 @@ export function addMember(member) {
     id: createId("member"),
     company: "",
     name: "",
+    englishName: "",
     phone: "",
     vehicle: "",
     camera: "X",

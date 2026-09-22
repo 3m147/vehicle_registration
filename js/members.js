@@ -67,6 +67,7 @@ export function searchMembers(members, keyword) {
     const searchableText = [
       member.company,
       member.name,
+      member.englishName,
       member.phone,
       member.vehicle
     ]

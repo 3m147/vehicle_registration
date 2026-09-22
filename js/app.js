@@ -100,6 +100,7 @@ const elements = {
   memberIdInput: document.querySelector("#memberIdInput"),
   memberCompanyInput: document.querySelector("#memberCompanyInput"),
   memberNameInput: document.querySelector("#memberNameInput"),
+  memberEnglishNameInput: document.querySelector("#memberEnglishNameInput"),
   memberPhoneInput: document.querySelector("#memberPhoneInput"),
   memberVehicleInput: document.querySelector("#memberVehicleInput"),
   memberAddNowInput: document.querySelector("#memberAddNowInput"),
@@ -132,6 +133,10 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function displayMemberName(member) {
+  return `${escapeHtml(member.name)}${member.englishName ? ` <small>(${escapeHtml(member.englishName)})</small>` : ""}`;
 }
 
 function downloadBlob(blob, fileName) {
@@ -438,7 +443,7 @@ function renderMemberList() {
           <label class="member-check">
             <input type="checkbox" ${checked} />
             <span>
-              <strong>${favorite} ${escapeHtml(member.name)}</strong>
+              <strong>${favorite} ${displayMemberName(member)}</strong>
               <small>${escapeHtml(member.company || "소속 미입력")}</small>
             </span>
           </label>
@@ -466,7 +471,7 @@ function renderRecentMembers() {
   }
 
   elements.recentMembers.innerHTML = recentMembers
-    .map((member) => `<button type="button" class="chip" data-member-id="${member.id}">${escapeHtml(member.name)}</button>`)
+    .map((member) => `<button type="button" class="chip" data-member-id="${member.id}">${displayMemberName(member)}</button>`)
     .join("");
 }
 
@@ -584,7 +589,7 @@ function renderSelectedMembers() {
       return `
         <li>
           <div class="selected-member-row">
-            <span>${escapeHtml(member.name)}</span>
+            <span>${displayMemberName(member)}</span>
             <button type="button" class="text-button danger" data-member-id="${member.id}">제외</button>
           </div>
           ${purposeField}
@@ -748,7 +753,7 @@ function renderPreview() {
                 const purpose = state.useIndividualPurposes
                   ? ` <small>${escapeHtml(member.visitPurpose || application.purpose || "-")}</small>`
                   : "";
-                return `<li>${escapeHtml(member.name)}${purpose}</li>`;
+                return `<li>${displayMemberName(member)}${purpose}</li>`;
               })
               .join("")
           : '<li class="empty-text">출입자를 선택해주세요.</li>'
@@ -826,6 +831,7 @@ function resetMemberForm() {
   elements.memberIdInput.value = "";
   renderCompanyOptions();
   elements.memberNameInput.value = "";
+  elements.memberEnglishNameInput.value = "";
   elements.memberPhoneInput.value = "";
   elements.memberVehicleInput.value = "";
   elements.memberAddNowInput.checked = true;
@@ -838,6 +844,7 @@ function openMemberDialog(member) {
     elements.memberIdInput.value = member.id;
     renderCompanyOptions(member.company || "");
     elements.memberNameInput.value = member.name || "";
+    elements.memberEnglishNameInput.value = member.englishName || "";
     elements.memberPhoneInput.value = member.phone || "";
     elements.memberVehicleInput.value = member.vehicle || "";
     elements.memberAddNowInput.checked = state.selectedMemberIds.includes(member.id);
@@ -856,6 +863,7 @@ function saveMemberFromForm() {
   const memberData = {
     company: elements.memberCompanyInput.value.trim(),
     name: elements.memberNameInput.value.trim(),
+    englishName: elements.memberEnglishNameInput.value.trim(),
     phone: normalizePhone(elements.memberPhoneInput.value.trim()),
     vehicle: elements.memberVehicleInput.value.trim()
   };
@@ -904,6 +912,7 @@ function mergeImportedMembers(importedMembers) {
       return {
         company: member.company.trim(),
         name: member.name.trim(),
+        englishName: (member.englishName || "").trim(),
         phone: normalizePhone(member.phone.trim()),
         vehicle: member.vehicle.trim()
       };
@@ -923,7 +932,8 @@ function mergeImportedMembers(importedMembers) {
     if (existingIndex >= 0) {
       nextMembers[existingIndex] = {
         ...nextMembers[existingIndex],
-        ...member
+        ...member,
+        englishName: member.englishName || nextMembers[existingIndex].englishName || ""
       };
       updatedCount += 1;
       return;
