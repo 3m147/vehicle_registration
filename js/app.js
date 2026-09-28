@@ -898,12 +898,10 @@ function ensureCompanyGroups(members) {
   });
 }
 
-function createMemberKey(member) {
-  if (member.phone) {
-    return `${member.name}|${member.phone}`;
-  }
-
-  return `${member.company}|${member.name}|${member.vehicle}`;
+function createImportedMemberKey(member) {
+  const company = String(member.company || "").trim().toLowerCase();
+  const name = String(member.name || "").replace(/\s+/g, "").toLowerCase();
+  return `${company}|${name}`;
 }
 
 function mergeImportedMembers(importedMembers) {
@@ -926,15 +924,22 @@ function mergeImportedMembers(importedMembers) {
   let updatedCount = 0;
 
   validMembers.forEach((member) => {
-    const memberKey = createMemberKey(member);
-    const existingIndex = nextMembers.findIndex((savedMember) => createMemberKey(savedMember) === memberKey);
+    const memberKey = createImportedMemberKey(member);
+    const existingMember = nextMembers.find((savedMember) => createImportedMemberKey(savedMember) === memberKey);
 
-    if (existingIndex >= 0) {
-      nextMembers[existingIndex] = {
-        ...nextMembers[existingIndex],
+    if (existingMember) {
+      Object.assign(existingMember, {
         ...member,
-        englishName: member.englishName || nextMembers[existingIndex].englishName || ""
-      };
+        englishName: member.englishName || existingMember.englishName || ""
+      });
+
+      for (let index = nextMembers.length - 1; index >= 0; index -= 1) {
+        const savedMember = nextMembers[index];
+        if (savedMember !== existingMember && createImportedMemberKey(savedMember) === memberKey) {
+          nextMembers.splice(index, 1);
+        }
+      }
+
       updatedCount += 1;
       return;
     }
